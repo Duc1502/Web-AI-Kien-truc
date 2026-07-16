@@ -1,0 +1,6 @@
+{
+  "name": "OpzenAI.vn - Cải Tạo Nhà AI",
+  "description": "Nền tảng trí tuệ nhân tạo cải tạo nhà cửa, thiết kế nội thất, sân vườn và dựng phối cảnh 3D nhanh chóng giống opzenai.com.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
