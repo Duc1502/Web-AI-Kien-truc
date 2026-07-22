@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { GeneratedProject, PricingPlan } from "./types";
 import { supabase, isSupabaseConfigured, UserProfile } from "./lib/supabaseClient";
+
+// Mỗi "chức năng" (tab) gắn với 1 URL riêng, để chuyển mục là đổi URL (không còn dồn hết vào "/").
+const TAB_TO_PATH: Record<string, string> = {
+  landing: "/",
+  create: "/studio",
+  gallery: "/bo-suu-tap",
+  pricing: "/bang-gia",
+  checkout: "/thanh-toan",
+};
+const PATH_TO_TAB: Record<string, string> = Object.fromEntries(
+  Object.entries(TAB_TO_PATH).map(([tab, path]) => [path, tab])
+);
 import Header from "./components/Header";
 import LandingPage from "./components/LandingPage";
 import CreatePage from "./components/CreatePage";
@@ -11,7 +24,13 @@ import CheckoutPage from "./components/CheckoutPage";
 import { Sparkles, HelpCircle, Mail, Phone, ExternalLink, ShieldCheck, Zap } from "lucide-react";
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<string>("landing");
+  const navigate = useNavigate();
+  const location = useLocation();
+  // "Tab hiện tại" suy ra từ URL thay vì state — nhờ vậy Header/footer/CreatePage giữ nguyên cách
+  // gọi setCurrentTab(...) nhưng thực chất là điều hướng URL.
+  const currentTab = PATH_TO_TAB[location.pathname] ?? "landing";
+  const setCurrentTab = (tab: string) => navigate(TAB_TO_PATH[tab] ?? "/");
+
   const [projects, setProjects] = useState<GeneratedProject[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -187,13 +206,18 @@ export default function App() {
           />
         )}
         {currentTab === "pricing" && <PricingPage onSelectPlan={handleSelectPlan} />}
-        {currentTab === "checkout" && selectedPlan && session?.user && (
-          <CheckoutPage
-            plan={selectedPlan}
-            userId={session.user.id}
-            onBack={() => setCurrentTab("pricing")}
-          />
-        )}
+        {currentTab === "checkout" &&
+          (selectedPlan && session?.user ? (
+            <CheckoutPage
+              plan={selectedPlan}
+              userId={session.user.id}
+              onBack={() => setCurrentTab("pricing")}
+            />
+          ) : (
+            // Vào thẳng/refresh /thanh-toan khi chưa chọn gói → không còn selectedPlan trong state,
+            // hiển thị lại Bảng Giá thay vì trang trắng.
+            <PricingPage onSelectPlan={handleSelectPlan} />
+          ))}
       </main>
 
       {/* Footer block */}
