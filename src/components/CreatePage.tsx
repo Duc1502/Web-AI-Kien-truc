@@ -55,6 +55,7 @@ import ImageUpload from "./ImageUpload";
 import BeforeAfterSlider from "./BeforeAfterSlider";
 import { useLanguage } from "../i18n/LanguageContext";
 import { localizedName, localizedDesc } from "../i18n/content";
+import { downloadImage } from "../lib/download";
 
 const getAspectClass = (ratio?: string) => {
   if (ratio === "16:9") return "aspect-[16/9]";
@@ -1102,18 +1103,23 @@ Không thêm chi tiết mới ngoài hình gốc.`;
         throw new Error(data.error || "Mô hình AI đang bận hoặc có lỗi xảy ra.");
       }
 
-      // Cap the result's stored resolution/compression according to the quality tier that was
-      // actually requested — previously every tier was crushed down to the same 1024px/JPEG80%,
-      // which threw away the extra resolution "3K"/"4K" (and Upscale AI) were supposed to deliver.
-      const effectiveQuality = isUpscaleTool ? "4k" : selectedQuality;
-      const maxDimension = effectiveQuality === "4k" ? 4096 : effectiveQuality === "3k" ? 2048 : 1024;
-      const jpegQuality = effectiveQuality === "4k" ? 0.95 : effectiveQuality === "3k" ? 0.9 : 0.8;
-      const compressedAfterImage = await compressBase64Image(data.renovatedImage, maxDimension, maxDimension, jpegQuality);
+      // Server ưu tiên trả về URL ảnh trong Supabase Storage (nhẹ, hỗ trợ 3K/4K, không nhồi base64
+      // vào localStorage). Nếu có URL thì dùng luôn; nếu không (Storage lỗi / local chưa cấu hình)
+      // thì fallback: nén base64 theo đúng tier chất lượng như trước.
+      let afterImage: string;
+      if (data.afterUrl) {
+        afterImage = data.afterUrl;
+      } else {
+        const effectiveQuality = isUpscaleTool ? "4k" : selectedQuality;
+        const maxDimension = effectiveQuality === "4k" ? 4096 : effectiveQuality === "3k" ? 2048 : 1024;
+        const jpegQuality = effectiveQuality === "4k" ? 0.95 : effectiveQuality === "3k" ? 0.9 : 0.8;
+        afterImage = await compressBase64Image(data.renovatedImage, maxDimension, maxDimension, jpegQuality);
+      }
 
       return {
         id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        beforeImage: sourceImage,
-        afterImage: compressedAfterImage,
+        beforeImage: data.beforeUrl || sourceImage,
+        afterImage,
         styleId: selectedStyle,
         roomTypeId: selectedRoom,
         prompt: data.prompt || stylePromptValue,
@@ -2618,12 +2624,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <button
                           type="button"
                           onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = resultProject.afterImage;
-                            link.download = `opzen-caitaonha-${resultProject.id}.png`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
+                            void downloadImage(resultProject.afterImage, `opzen-caitaonha-${resultProject.id}.png`);
                           }}
                           className="bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl transition flex items-center gap-1.5"
                           title={t("create.result.downloadTitle")}
@@ -2731,12 +2732,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <div className="flex gap-3 pt-1">
                       <button
                         onClick={() => {
-                          const link = document.createElement("a");
-                          link.href = resultProject.afterImage;
-                          link.download = `opzen-caitaonha-${resultProject.id}.png`;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
+                          void downloadImage(resultProject.afterImage, `opzen-caitaonha-${resultProject.id}.png`);
                         }}
                         className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-violet-500/10"
                       >
@@ -3161,12 +3157,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
             <button
               onClick={() => {
-                const link = document.createElement("a");
-                link.href = resultProject.afterImage;
-                link.download = `opzen-caitaonha-${resultProject.id}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                void downloadImage(resultProject.afterImage, `opzen-caitaonha-${resultProject.id}.png`);
               }}
               className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-widest px-6 py-3 rounded-2xl transition flex items-center justify-center gap-2 shadow-lg"
             >

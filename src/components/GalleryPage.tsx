@@ -5,6 +5,7 @@ import { Trash2, Download, Eye, Calendar, Tag, Compass, Sparkles, X, ChevronRigh
 import BeforeAfterSlider from "./BeforeAfterSlider";
 import { useLanguage } from "../i18n/LanguageContext";
 import { localizedName } from "../i18n/content";
+import { downloadImage } from "../lib/download";
 
 const getAspectClass = (ratio?: string) => {
   if (ratio === "16:9") return "aspect-[16/9]";
@@ -61,15 +62,6 @@ export default function GalleryPage({
     } catch {
       return dateStr;
     }
-  };
-
-  const downloadImage = (base64Data: string, fileName: string) => {
-    const link = document.createElement("a");
-    link.href = base64Data;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
