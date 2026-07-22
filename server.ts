@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
-import { PRICING_PLANS } from "./src/config";
+import { PRICING_PLANS } from "./src/config.js";
 
 // Load environment variables (.env.local takes precedence, matching README setup instructions)
 dotenv.config();
