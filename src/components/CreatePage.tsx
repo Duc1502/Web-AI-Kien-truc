@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import HouseOrbitPreview from "./HouseOrbitPreview";
 import ImageAnnotator, { EditMarker, renderAnnotatedImage } from "./ImageAnnotator";
 import TemplatePostCard from "./TemplatePostCard";
-import { DESIGN_MODES, DESIGN_STYLES, ROOM_TYPES, RESOLUTION_OPTIONS, LOADING_MESSAGES, SCHOOL_TAXONOMY, ASPECT_RATIO_OPTIONS, QUALITY_OPTIONS, VIEW_OPTIONS, CONTEXT_OPTIONS, LIGHTING_OPTIONS, WEATHER_OPTIONS, COLOR_OPTIONS, PLANNING_VIEW_OPTIONS, PLANNING_DENSITY_OPTIONS, PLANNING_CONTEXT_OPTIONS, PLANNING_LIGHTING_OPTIONS, PLANNING_WEATHER_OPTIONS, TEMPLATE_POSTS } from "../config";
+import { DESIGN_MODES, DESIGN_STYLES, ROOM_TYPES, RESOLUTION_OPTIONS, LOADING_MESSAGES, LOADING_MESSAGES_EN, SCHOOL_TAXONOMY, ASPECT_RATIO_OPTIONS, QUALITY_OPTIONS, VIEW_OPTIONS, CONTEXT_OPTIONS, LIGHTING_OPTIONS, WEATHER_OPTIONS, COLOR_OPTIONS, PLANNING_VIEW_OPTIONS, PLANNING_DENSITY_OPTIONS, PLANNING_CONTEXT_OPTIONS, PLANNING_LIGHTING_OPTIONS, PLANNING_WEATHER_OPTIONS, TEMPLATE_POSTS } from "../config";
 import { DesignStyle, RoomType, ResolutionOption, GeneratedProject, AspectRatioOption, QualityOption } from "../types";
 import {
   Sparkles,
@@ -53,6 +53,8 @@ import {
 } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import BeforeAfterSlider from "./BeforeAfterSlider";
+import { useLanguage } from "../i18n/LanguageContext";
+import { localizedName, localizedDesc } from "../i18n/content";
 
 const getAspectClass = (ratio?: string) => {
   if (ratio === "16:9") return "aspect-[16/9]";
@@ -148,24 +150,25 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
 interface CameraAnglePreset {
   id: string;
   label: string;
+  labelEn: string;
   rotation: number;
   tilt: number;
   zoom: number;
 }
 
 const CAMERA_ANGLE_PRESETS: CameraAnglePreset[] = [
-  { id: "front_eye", label: "Chính diện – tầm mắt", rotation: 0, tilt: 0, zoom: 0 },
-  { id: "front_left_34", label: "Góc 3/4 trái phía trước", rotation: 315, tilt: 0, zoom: 0 },
-  { id: "front_right_34", label: "Góc 3/4 phải phía trước", rotation: 45, tilt: 0, zoom: 0 },
-  { id: "left_side", label: "Cạnh bên trái", rotation: 270, tilt: 0, zoom: 0 },
-  { id: "right_side", label: "Cạnh bên phải", rotation: 90, tilt: 0, zoom: 0 },
-  { id: "rear", label: "Phía sau công trình", rotation: 180, tilt: 0, zoom: 0 },
-  { id: "low_hero", label: "Góc thấp hùng vĩ (hero shot)", rotation: 0, tilt: 35, zoom: 0 },
-  { id: "low_34", label: "Góc thấp 3/4", rotation: 330, tilt: 30, zoom: 0 },
-  { id: "high_overview", label: "Góc cao bao quát", rotation: 315, tilt: -35, zoom: 0 },
-  { id: "birdview", label: "Góc chim bay (drone)", rotation: 300, tilt: -65, zoom: 0 },
-  { id: "top_down", label: "Flycam thẳng đứng", rotation: 0, tilt: -85, zoom: 0 },
-  { id: "closeup_facade", label: "Cận cảnh mặt tiền", rotation: 0, tilt: 0, zoom: 75 },
+  { id: "front_eye", label: "Chính diện – tầm mắt", labelEn: "Front – eye level", rotation: 0, tilt: 0, zoom: 0 },
+  { id: "front_left_34", label: "Góc 3/4 trái phía trước", labelEn: "Front 3/4 left", rotation: 315, tilt: 0, zoom: 0 },
+  { id: "front_right_34", label: "Góc 3/4 phải phía trước", labelEn: "Front 3/4 right", rotation: 45, tilt: 0, zoom: 0 },
+  { id: "left_side", label: "Cạnh bên trái", labelEn: "Left side", rotation: 270, tilt: 0, zoom: 0 },
+  { id: "right_side", label: "Cạnh bên phải", labelEn: "Right side", rotation: 90, tilt: 0, zoom: 0 },
+  { id: "rear", label: "Phía sau công trình", labelEn: "Rear view", rotation: 180, tilt: 0, zoom: 0 },
+  { id: "low_hero", label: "Góc thấp hùng vĩ (hero shot)", labelEn: "Low hero shot", rotation: 0, tilt: 35, zoom: 0 },
+  { id: "low_34", label: "Góc thấp 3/4", labelEn: "Low 3/4", rotation: 330, tilt: 30, zoom: 0 },
+  { id: "high_overview", label: "Góc cao bao quát", labelEn: "High overview", rotation: 315, tilt: -35, zoom: 0 },
+  { id: "birdview", label: "Góc chim bay (drone)", labelEn: "Bird's-eye (drone)", rotation: 300, tilt: -65, zoom: 0 },
+  { id: "top_down", label: "Flycam thẳng đứng", labelEn: "Top-down flycam", rotation: 0, tilt: -85, zoom: 0 },
+  { id: "closeup_facade", label: "Cận cảnh mặt tiền", labelEn: "Facade close-up", rotation: 0, tilt: 0, zoom: 75 },
 ];
 
 interface CreatePageProps {
@@ -194,6 +197,13 @@ export default function CreatePage({
   onAddProject,
   onCreditsUpdated,
 }: CreatePageProps) {
+  const { t, lang } = useLanguage();
+
+  // Dịch tên hiển thị của option trong dropdown: dùng englishName (phong cách/phòng) hoặc nameEn
+  // (attribute options — bổ sung ở config) khi ở EN; thiếu thì giữ tên tiếng Việt.
+  const locOpts = (opts: { id: string; name: string; englishName?: string; nameEn?: string }[]) =>
+    opts.map((o) => ({ id: o.id, name: lang === "en" ? o.nameEn || o.englishName || o.name : o.name }));
+
   // Navigation Tabs at the very top (matching opzenai.com/vi/feature)
   // 1: Render ảnh, 2: render mặt bằng, 3: render cải tạo AI, 4: đồng bộ view, 5: chỉnh sửa ảnh, 6: tính năng mở rộng
   const [activeTab, setActiveTab] = useState<string>("render_photo");
@@ -437,16 +447,16 @@ export default function CreatePage({
       setActiveTool({
         id: "sync_view",
         tab: "sync_view",
-        name: "Đồng Bộ View",
-        description: "Khởi tạo nhiều góc nhìn đồng bộ từ cùng một không gian gốc.",
+        name: t("create.mod.syncName"),
+        description: t("create.mod.syncDesc"),
         iconName: "RefreshCw"
       });
     } else if (activeTab === "edit_photo") {
       setActiveTool({
         id: "edit_photo",
         tab: "edit_photo",
-        name: "Chỉnh Sửa Ảnh AI",
-        description: "Chỉnh sửa, vẽ thêm hoặc xóa vật thể bằng ngôn ngữ tự nhiên.",
+        name: t("create.mod.editName"),
+        description: t("create.mod.editDesc"),
         iconName: "PenTool"
       });
     } else {
@@ -559,13 +569,14 @@ export default function CreatePage({
   // no generic detail options.
   const isMoodboardTool = activeTab === "extended_features" && activeTool?.id === "moodboard_creator";
   const availableRoomTypes = [
-    { id: "default", name: "Mặc định", englishName: "original layout structure", iconName: "Home", description: "Tự động nhận diện cấu trúc gốc từ ảnh tải lên" },
+    { id: "default", name: "Mặc định", nameEn: "Default", englishName: "original layout structure", iconName: "Home", description: "Tự động nhận diện cấu trúc gốc từ ảnh tải lên" },
     ...SCHOOL_TAXONOMY[activeSchool].roomTypes
   ];
   const availableDesignStyles = [
     {
       id: "default",
       name: "Mặc định",
+      nameEn: "Default",
       englishName: "Default style",
       description: "Tự động tối ưu hóa phong cách phối cảnh phù hợp nhất",
       promptSuffix: "photorealistic high-end architectural rendering, beautiful organic materials and exquisite colors",
@@ -667,7 +678,7 @@ export default function CreatePage({
     // Check limit
     const availableSlots = maxRefImages - refImages.length;
     if (availableSlots <= 0) {
-      alert(`Bạn đã tải lên tối đa ${maxRefImages} ảnh tham chiếu.`);
+      alert(`${t("create.err.maxRefPre")} ${maxRefImages} ${t("create.err.maxRefPost")}`);
       return;
     }
 
@@ -675,7 +686,7 @@ export default function CreatePage({
     
     filesToProcess.forEach((file: File) => {
       if (!file.type.startsWith("image/")) {
-        alert("Vui lòng chọn một tệp tin hình ảnh hợp lệ (PNG, JPG, JPEG).");
+        alert(t("create.err.invalidFile"));
         return;
       }
       
@@ -733,7 +744,7 @@ export default function CreatePage({
   // Render trigger handle
   const handleGenerate = async () => {
     if (!authUserId) {
-      setErrorMessage("Vui lòng đăng nhập Google để sử dụng tính năng render.");
+      setErrorMessage(t("create.err.loginRequired"));
       onRequireLogin();
       return;
     }
@@ -747,7 +758,7 @@ export default function CreatePage({
     }
 
     if (!finalSourceImage) {
-      setErrorMessage("Vui lòng tải lên hình ảnh nguồn của bạn.");
+      setErrorMessage(t("create.err.uploadRequired"));
       window.scrollTo({ top: 120, behavior: "smooth" });
       return;
     }
@@ -766,7 +777,7 @@ export default function CreatePage({
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData.session?.access_token;
     if (!accessToken) {
-      setErrorMessage("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+      setErrorMessage(t("create.err.sessionExpired"));
       onRequireLogin();
       return;
     }
@@ -1132,7 +1143,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
       setResultProject(successes[0]);
 
       if (successes.length < renderCount) {
-        setErrorMessage(`Đã tạo thành công ${successes.length}/${renderCount} ảnh. Một số lượt bị lỗi, vui lòng thử lại nếu cần.`);
+        setErrorMessage(`${t("create.err.partialPre")} ${successes.length}/${renderCount} ${t("create.err.partialPost")}`);
       }
     } catch (err: any) {
       console.error(err);
@@ -1147,52 +1158,52 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
   // Switch Sub-tabs in opzen style
   const subTabs = [
-    { id: "render_photo", label: "Render Ảnh", iconName: "Camera" },
-    { id: "render_floorplan", label: "Render Mặt Bằng", iconName: "Map" },
-    { id: "renovate_ai", label: "Cải Tạo AI", iconName: "Hammer" },
-    { id: "sync_view", label: "Đồng Bộ View", iconName: "RefreshCw" },
-    { id: "edit_photo", label: "Chỉnh Sửa Ảnh", iconName: "PenTool" },
-    { id: "extended_features", label: "Tính Năng Mở Rộng", iconName: "Grid" },
-    { id: "template_library", label: "Thư Viện Mẫu", iconName: "BookOpen" },
+    { id: "render_photo", label: t("create.tab.renderPhoto"), iconName: "Camera" },
+    { id: "render_floorplan", label: t("create.tab.renderFloorplan"), iconName: "Map" },
+    { id: "renovate_ai", label: t("create.tab.renovateAi"), iconName: "Hammer" },
+    { id: "sync_view", label: t("create.tab.syncView"), iconName: "RefreshCw" },
+    { id: "edit_photo", label: t("create.tab.editPhoto"), iconName: "PenTool" },
+    { id: "extended_features", label: t("create.tab.extended"), iconName: "Grid" },
+    { id: "template_library", label: t("create.tab.templateLibrary"), iconName: "BookOpen" },
   ];
 
   // Grid tools for "Render Ảnh"
   const renderPhotoTools = [
-    { id: "architecture", name: "Kiến trúc", description: "Dựng phối cảnh 3D chân thực từ bản vẽ 2D hoặc hình khối sơ phác.", bgImage: "/images/anh-kien-truc.jpg", iconName: "Home" },
-    { id: "interior", name: "Nội thất", description: "Tự động gợi ý phong cách, vật liệu và bố trí nội thất cho không gian.", bgImage: "/images/anh-noi-that.jpg", iconName: "Sofa" },
-    { id: "planning", name: "Quy hoạch", description: "Phân tích và render quy hoạch khu dân cư, đô thị với mật độ tự chọn.", bgImage: "/images/anh-quy-hoach.jpg", iconName: "Layers" },
-    { id: "landscape", name: "Sân vườn", description: "Thiết kế sân vườn, tiểu cảnh và không gian xanh hài hòa với công trình.", bgImage: "/images/anh-san-vuon.jpg", iconName: "Trees" },
+    { id: "architecture", name: t("create.tool.architecture.name"), description: t("create.tool.architecture.desc"), bgImage: "/images/anh-kien-truc.jpg", iconName: "Home" },
+    { id: "interior", name: t("create.tool.interior.name"), description: t("create.tool.interior.desc"), bgImage: "/images/anh-noi-that.jpg", iconName: "Sofa" },
+    { id: "planning", name: t("create.tool.planning.name"), description: t("create.tool.planning.desc"), bgImage: "/images/anh-quy-hoach.jpg", iconName: "Layers" },
+    { id: "landscape", name: t("create.tool.landscape.name"), description: t("create.tool.landscape.desc"), bgImage: "/images/anh-san-vuon.jpg", iconName: "Trees" },
   ];
 
   // Grid tools for "Render Mặt Bằng"
   const renderFloorplanTools = [
-    { id: "floorplan_architecture", name: "Kiến trúc", description: "Chuyển mặt bằng kỹ thuật thành phối cảnh ngoại thất 3D.", bgImage: "/images/floorplan-kien-truc.png", iconName: "Home" },
-    { id: "floorplan_interior", name: "Nội thất", description: "Lên màu và bố trí nội thất từ bản vẽ mặt bằng 2D.", bgImage: "/images/floorplan-noi-that.png", iconName: "Sofa" },
-    { id: "floorplan_planning", name: "Render Quy hoạch", description: "Quy hoạch tổng thể chi tiết từ bản đồ phân lô xây dựng.", bgImage: "/images/floorplan-quy-hoach.jpg", iconName: "Layers" },
-    { id: "floorplan_landscape", name: "Render Sân vườn", description: "Thiết kế cảnh quan sân vườn và lối đi sinh thái từ mặt bằng.", bgImage: "/images/floorplan-san-vuon.jpg", iconName: "Trees" },
+    { id: "floorplan_architecture", name: t("create.tool.fpArchitecture.name"), description: t("create.tool.fpArchitecture.desc"), bgImage: "/images/floorplan-kien-truc.png", iconName: "Home" },
+    { id: "floorplan_interior", name: t("create.tool.fpInterior.name"), description: t("create.tool.fpInterior.desc"), bgImage: "/images/floorplan-noi-that.png", iconName: "Sofa" },
+    { id: "floorplan_planning", name: t("create.tool.fpPlanning.name"), description: t("create.tool.fpPlanning.desc"), bgImage: "/images/floorplan-quy-hoach.jpg", iconName: "Layers" },
+    { id: "floorplan_landscape", name: t("create.tool.fpLandscape.name"), description: t("create.tool.fpLandscape.desc"), bgImage: "/images/floorplan-san-vuon.jpg", iconName: "Trees" },
   ];
 
   // Grid tools for "Cải Tạo AI"
   const renovateAiTools = [
-    { id: "renovate_interior", name: "Cải tạo Nội thất", description: "Nâng cấp, thay đổi phong cách và vật liệu cho không gian bên trong.", bgImage: "/images/caitaonoithat.png", iconName: "Sofa" },
-    { id: "renovate_exterior", name: "Cải tạo Ngoại thất", description: "Làm mới mặt tiền, thay đổi hình khối và vật liệu kiến trúc bên ngoài.", bgImage: "/images/caitaongoaithat.png", iconName: "Home" },
-    { id: "renovate_landscape", name: "Cải tạo Sân vườn", description: "Quy hoạch lại cảnh quan, thêm cây xanh và tiểu cảnh ngoài trời.", bgImage: "/images/caitaosanvuon.png", iconName: "Trees" },
-    { id: "renovate_staging", name: "Thiết kế không gian thực tế", description: "Sắp xếp lại công năng và bố cục không gian dựa trên ảnh hiện trạng.", bgImage: "/images/caitaoquyhoach.png", iconName: "Wand2" },
+    { id: "renovate_interior", name: t("create.tool.renovInterior.name"), description: t("create.tool.renovInterior.desc"), bgImage: "/images/caitaonoithat.png", iconName: "Sofa" },
+    { id: "renovate_exterior", name: t("create.tool.renovExterior.name"), description: t("create.tool.renovExterior.desc"), bgImage: "/images/caitaongoaithat.png", iconName: "Home" },
+    { id: "renovate_landscape", name: t("create.tool.renovLandscape.name"), description: t("create.tool.renovLandscape.desc"), bgImage: "/images/caitaosanvuon.png", iconName: "Trees" },
+    { id: "renovate_staging", name: t("create.tool.renovStaging.name"), description: t("create.tool.renovStaging.desc"), bgImage: "/images/caitaoquyhoach.png", iconName: "Wand2" },
   ];
 
   // 15 Extended features (From photo 6)
   const extendedFeatures = [
-    { id: "re_render", name: "Re-Render (Làm chân thực thiết kế)", description: "Biến ảnh phác thảo/render thành ảnh thực tế sắc nét.", iconName: "RefreshCw" },
-    { id: "prompt_to_design", name: "Tạo thiết kế từ prompt", description: "Tạo ảnh phối cảnh từ câu lệnh văn bản không cần ảnh gốc.", iconName: "FileText" },
-    { id: "sketch_notes", name: "Sửa Bằng Ghi Chú", description: "Chỉnh sửa ảnh chính xác thông qua các ghi chú vẽ tay.", iconName: "PenTool" },
-    { id: "upscale_ai", name: "Upscale AI 4K", description: "Nâng cao chất lượng và độ phân giải ảnh lên siêu sắc nét 4K.", iconName: "Maximize2" },
-    { id: "layout_creator", name: "Tạo Layout", description: "Tự động dàn trang layout presentation kiến trúc chuyên nghiệp.", iconName: "Layers" },
-    { id: "watermark_logo", name: "Đóng dấu & Chèn Logo", description: "Chèn logo thương hiệu hàng loạt cho bộ ảnh dự án.", iconName: "Stamp" },
-    { id: "real_estate_poster", name: "Poster BĐS", description: "Dàn trang thiết kế poster quảng cáo bất động sản tự động.", iconName: "FileImage" },
-    { id: "render_blueprint", name: "Tạo Bản Vẽ", description: "Tạo bản vẽ kỹ thuật (mặt đứng, mặt cắt) từ phối cảnh 3D.", iconName: "Layers3" },
-    { id: "technical_drawing", name: "Bản vẽ kỹ thuật", description: "Phân tích kết cấu và xuất bản vẽ kỹ thuật chi tiết.", iconName: "Map" },
-    { id: "diagram_creator", name: "Tạo Diagram", description: "Tạo sơ đồ phân tích kiến trúc (Diagram) chuyên nghiệp.", iconName: "Grid" },
-    { id: "moodboard_creator", name: "Tạo Moodboard", description: "Tạo bảng ý tưởng vật liệu và tông màu chủ đạo từ từ khóa.", iconName: "Layers" },
+    { id: "re_render", name: t("create.ext.reRender.name"), description: t("create.ext.reRender.desc"), iconName: "RefreshCw" },
+    { id: "prompt_to_design", name: t("create.ext.promptToDesign.name"), description: t("create.ext.promptToDesign.desc"), iconName: "FileText" },
+    { id: "sketch_notes", name: t("create.ext.sketchNotes.name"), description: t("create.ext.sketchNotes.desc"), iconName: "PenTool" },
+    { id: "upscale_ai", name: t("create.ext.upscale.name"), description: t("create.ext.upscale.desc"), iconName: "Maximize2" },
+    { id: "layout_creator", name: t("create.ext.layout.name"), description: t("create.ext.layout.desc"), iconName: "Layers" },
+    { id: "watermark_logo", name: t("create.ext.watermark.name"), description: t("create.ext.watermark.desc"), iconName: "Stamp" },
+    { id: "real_estate_poster", name: t("create.ext.poster.name"), description: t("create.ext.poster.desc"), iconName: "FileImage" },
+    { id: "render_blueprint", name: t("create.ext.blueprint.name"), description: t("create.ext.blueprint.desc"), iconName: "Layers3" },
+    { id: "technical_drawing", name: t("create.ext.technical.name"), description: t("create.ext.technical.desc"), iconName: "Map" },
+    { id: "diagram_creator", name: t("create.ext.diagram.name"), description: t("create.ext.diagram.desc"), iconName: "Grid" },
+    { id: "moodboard_creator", name: t("create.ext.moodboard.name"), description: t("create.ext.moodboard.desc"), iconName: "Layers" },
   ];
 
   return (
@@ -1234,7 +1245,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           className="flex items-center justify-center gap-2 bg-[#111827] border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 text-slate-300 hover:text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shrink-0"
         >
           <Clock className="w-4 h-4 text-violet-400" />
-          Lịch sử
+          {t("create.history")}
         </button>
       </div>
 
@@ -1256,12 +1267,12 @@ Không thêm chi tiết mới ngoài hình gốc.`;
               className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-white bg-slate-900/60 hover:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-800 transition"
             >
               <ChevronLeft className="w-4 h-4" />
-              Quay lại danh mục
+              {t("create.backToCatalog")}
             </button>
 
             <div className="text-right">
               <span className="text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/25 px-2.5 py-1 rounded font-mono font-bold uppercase tracking-widest">
-                Phân hệ: {activeTool.name}
+                {t("create.module")}: {activeTool.name}
               </span>
             </div>
           </div>
@@ -1282,7 +1293,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       moodboardMode === "to_space" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    Moodboard → Không gian
+                    {t("create.moodboard.toSpace")}
                   </button>
                   <button
                     type="button"
@@ -1291,7 +1302,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       moodboardMode === "to_moodboard" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    Không gian → Moodboard
+                    {t("create.moodboard.toMoodboard")}
                   </button>
                 </div>
               )}
@@ -1303,13 +1314,13 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                       1
                     </span>
-                    {isMoodboardTool ? "Tải Lên Ảnh Gốc" : activeTab === "render_floorplan" ? "Tải lên bản vẽ mặt bằng" : "Tải lên hình ảnh không gian gốc"}
+                    {isMoodboardTool ? t("create.upload.titleMoodboard") : activeTab === "render_floorplan" ? t("create.upload.titleFloorplan") : t("create.upload.titleDefault")}
                   </h2>
                   <div className="bg-[#080B11]/80 rounded-xl border border-slate-800 p-2.5">
                     <p className="text-[10px] text-slate-500 font-bold mb-2 uppercase tracking-wider">
-                      {activeTab === "render_floorplan" 
-                        ? "Hỗ trợ định dạng CAD, vẽ phác sơ bộ, sơ đồ 2D đen trắng" 
-                        : "Hỗ trợ ảnh chụp hiện trạng camera điện thoại, ảnh phối cảnh thô cũ"}
+                      {activeTab === "render_floorplan"
+                        ? t("create.upload.hintFloorplan")
+                        : t("create.upload.hintDefault")}
                     </p>
                     <ImageUpload
                       onImageSelected={setSelectedImage}
@@ -1331,13 +1342,13 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                       2
                     </span>
-                    Tùy chỉnh góc nhìn đồng bộ
+                    {t("create.sync.title")}
                   </h2>
 
                   <div className="space-y-5">
                     {/* View type toggle */}
                     <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Phân loại góc</label>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("create.sync.angleType")}</label>
                       <div className="grid grid-cols-2 gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
                         <button
                           type="button"
@@ -1346,7 +1357,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             syncViewType === "exterior" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Ngoại thất
+                          {t("create.exterior")}
                         </button>
                         <button
                           type="button"
@@ -1355,7 +1366,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             syncViewType === "interior" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Nội thất
+                          {t("create.interior")}
                         </button>
                       </div>
                     </div>
@@ -1390,7 +1401,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                           {/* Instructions floating at the top */}
                           <div className="absolute top-3 left-0 right-0 text-center pointer-events-none z-10">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full shadow-lg">
-                              Giữ và kéo để thay đổi góc nhìn camera
+                              {t("create.sync.dragHint")}
                             </span>
                           </div>
 
@@ -1399,7 +1410,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             type="button"
                             onClick={() => adjustCameraTilt(15)}
                             className="absolute top-2 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition shadow-md z-10 cursor-pointer active:scale-95"
-                            title="Nghiêng lên"
+                            title={t("create.sync.tiltUp")}
                           >
                             <ChevronUp className="w-4 h-4" />
                           </button>
@@ -1409,7 +1420,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             type="button"
                             onClick={() => adjustCameraTilt(-15)}
                             className="absolute bottom-2 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition shadow-md z-10 cursor-pointer active:scale-95"
-                            title="Nghiêng xuống"
+                            title={t("create.sync.tiltDown")}
                           >
                             <ChevronDown className="w-4 h-4" />
                           </button>
@@ -1419,7 +1430,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             type="button"
                             onClick={() => adjustCameraRotation(-15)}
                             className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition shadow-md z-10 cursor-pointer active:scale-95"
-                            title="Xoay trái"
+                            title={t("create.sync.rotateLeft")}
                           >
                             <ChevronLeft className="w-4 h-4" />
                           </button>
@@ -1429,7 +1440,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             type="button"
                             onClick={() => adjustCameraRotation(15)}
                             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition shadow-md z-10 cursor-pointer active:scale-95"
-                            title="Xoay phải"
+                            title={t("create.sync.rotateRight")}
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
@@ -1552,7 +1563,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                               {generate12Angles && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                             </div>
                             <span className="text-xs text-slate-300 font-medium group-hover:text-white transition-colors">
-                              Tạo ảnh từ 12 góc chụp đẹp nhất.
+                              {t("create.sync.gen12")}
                             </span>
                           </label>
                         </div>
@@ -1563,7 +1574,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {/* Slider 1: Xoay */}
                         <div className="bg-[#0b0f19] border border-slate-800/80 rounded-xl px-4 py-2.5 space-y-1.5 shadow-sm">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Xoay</span>
+                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">{t("create.sync.rotate")}</span>
                             <span className="text-white font-black text-xs bg-slate-900 px-2 py-0.5 rounded border border-slate-800 min-w-[45px] text-center">
                               {cameraRotation}°
                             </span>
@@ -1581,7 +1592,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {/* Slider 2: Nghiêng */}
                         <div className="bg-[#0b0f19] border border-slate-800/80 rounded-xl px-4 py-2.5 space-y-1.5 shadow-sm">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Nghiêng</span>
+                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">{t("create.sync.tilt")}</span>
                             <span className="text-white font-black text-xs bg-slate-900 px-2 py-0.5 rounded border border-slate-800 min-w-[45px] text-center">
                               {cameraTilt}°
                             </span>
@@ -1599,7 +1610,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {/* Slider 3: Phóng */}
                         <div className="bg-[#0b0f19] border border-slate-800/80 rounded-xl px-4 py-2.5 space-y-1.5 shadow-sm">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Phóng</span>
+                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">{t("create.sync.zoom")}</span>
                             <span className="text-white font-black text-xs bg-slate-900 px-2 py-0.5 rounded border border-slate-800 min-w-[45px] text-center">
                               {cameraZoom}
                             </span>
@@ -1619,45 +1630,45 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     {/* Standard details for synchronization */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Kiểu Góc Máy</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t("create.sync.cameraStyle")}</label>
                         <select
                           value={syncAngle}
                           onChange={(e) => handleSelectCameraPreset(e.target.value)}
                           className="w-full bg-[#080B11]/80 border border-slate-800 text-xs text-white rounded-xl p-2.5 focus:border-violet-500 focus:outline-none cursor-pointer"
                         >
-                          <option value="custom">Tùy chỉnh (kéo thủ công)</option>
+                          <option value="custom">{t("create.camera.custom")}</option>
                           {CAMERA_ANGLE_PRESETS.map((preset) => (
-                            <option key={preset.id} value={preset.id}>{preset.label}</option>
+                            <option key={preset.id} value={preset.id}>{lang === "en" ? preset.labelEn : preset.label}</option>
                           ))}
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Hiệu ứng khung hình</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t("create.sync.frameEffect")}</label>
                         <select
                           value={syncEffect}
                           onChange={(e) => setSyncEffect(e.target.value)}
                           className="w-full bg-[#080B11]/80 border border-slate-800 text-xs text-white rounded-xl p-2.5 focus:border-violet-500 focus:outline-none cursor-pointer"
                         >
-                          <option value="none">Không có hiệu ứng</option>
-                          <option value="cinematic">Phim điện ảnh chuyên nghiệp</option>
-                          <option value="sketch">Bản vẽ tay nghệ thuật</option>
-                          <option value="clay">Mô hình đất sét trắng (Clay)</option>
+                          <option value="none">{t("create.sync.effect.none")}</option>
+                          <option value="cinematic">{t("create.sync.effect.cinematic")}</option>
+                          <option value="sketch">{t("create.sync.effect.sketch")}</option>
+                          <option value="clay">{t("create.sync.effect.clay")}</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Thời gian / Không khí</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t("create.sync.atmosphere")}</label>
                         <select
                           value={syncAtmosphere}
                           onChange={(e) => setSyncAtmosphere(e.target.value)}
                           className="w-full bg-[#080B11]/80 border border-slate-800 text-xs text-white rounded-xl p-2.5 focus:border-violet-500 focus:outline-none cursor-pointer"
                         >
-                          <option value="default">Mặc định</option>
-                          <option value="sunset">Hoàng hôn rực rỡ (Sunset)</option>
-                          <option value="sunny">Ban ngày nắng nhẹ (Sunny)</option>
-                          <option value="night">Ban đêm lung linh (Night)</option>
-                          <option value="foggy">Bình minh sương mù (Foggy)</option>
+                          <option value="default">{t("create.sync.atm.default")}</option>
+                          <option value="sunset">{t("create.sync.atm.sunset")}</option>
+                          <option value="sunny">{t("create.sync.atm.sunny")}</option>
+                          <option value="night">{t("create.sync.atm.night")}</option>
+                          <option value="foggy">{t("create.sync.atm.foggy")}</option>
                         </select>
                       </div>
                     </div>
@@ -1670,7 +1681,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                       2
                     </span>
-                    Đánh dấu điểm cần sửa & mô tả thay đổi
+                    {t("create.edit.header")}
                   </h2>
                   <div className="space-y-4">
                     {selectedImage ? (
@@ -1681,17 +1692,17 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         maxMarkers={10}
                       />
                     ) : (
-                      <p className="text-xs text-slate-500 italic">Tải ảnh lên ở mục 1 để bắt đầu đánh dấu điểm cần sửa.</p>
+                      <p className="text-xs text-slate-500 italic">{t("create.edit.uploadFirst")}</p>
                     )}
 
                     <div className="space-y-1.5">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        Mô tả chung {editMarkers.length > 0 ? "(bổ sung, tùy chọn)" : ""}
+                        {t("create.generalDesc")} {editMarkers.length > 0 ? t("create.edit.optional") : ""}
                       </label>
                       <textarea
                         value={editPrompt}
                         onChange={(e) => setEditPrompt(e.target.value)}
-                        placeholder="Ví dụ: Thêm một ban công sắt nghệ thuật vào cửa sổ tầng hai, thay thế bộ bàn ghế phòng khách thành sofa da nỉ sang trọng..."
+                        placeholder={t("create.edit.placeholder")}
                         rows={3}
                         className="w-full bg-[#080B11]/80 border border-slate-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 transition leading-relaxed"
                       />
@@ -1700,7 +1711,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     {/* Section 3: Reference images (e.g. photos of furniture to add into the space) */}
                     <div className="space-y-2">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        Ảnh tham chiếu (Tùy chọn, tối đa {maxRefImages} ảnh) — VD: ảnh món đồ nội thất muốn thêm vào
+                        {t("create.refImages.prefix")} {maxRefImages} {t("create.refImages.suffix")}
                       </label>
                       <div className="grid grid-cols-3 gap-3">
                         {refImages.map((img, idx) => (
@@ -1714,7 +1725,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                               <X className="w-3.5 h-3.5" />
                             </button>
                             <div className="absolute bottom-1.5 left-1.5 bg-black/60 px-2 py-0.5 rounded text-[9px] text-slate-300 font-mono">
-                              Ảnh {idx + 1}
+                              {t("create.image")} {idx + 1}
                             </div>
                           </div>
                         ))}
@@ -1722,7 +1733,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {refImages.length < maxRefImages && (
                           <label className="relative aspect-square rounded-xl border border-dashed border-slate-800 hover:border-violet-500 bg-[#080B11]/50 hover:bg-violet-500/5 flex flex-col items-center justify-center cursor-pointer transition text-center p-2 group">
                             <FileImage className="w-6 h-6 text-slate-500 mb-1.5 group-hover:text-violet-400" />
-                            <span className="text-[10px] font-bold text-slate-400">Tải ảnh lên</span>
+                            <span className="text-[10px] font-bold text-slate-400">{t("create.upload.small")}</span>
                             <span className="text-[9px] text-slate-600 mt-0.5">({refImages.length}/{maxRefImages})</span>
                             <input
                               type="file"
@@ -1747,7 +1758,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black mr-1">
                           2
                         </span>
-                        Chọn loại & chế độ
+                        {t("create.fp.typeMode")}
                         <HelpCircle className="w-4 h-4 text-slate-400 cursor-pointer hover:text-white transition ml-1.5 shrink-0" />
                       </h2>
                       <div className="grid grid-cols-2 gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
@@ -1758,7 +1769,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             floorplanViewMode === "overview" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Phối cảnh tổng thể
+                          {t("create.fp.overview")}
                         </button>
                         <button
                           type="button"
@@ -1767,13 +1778,13 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             floorplanViewMode === "view3d" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Góc nhìn kiến trúc 3D
+                          {t("create.fp.view3d")}
                         </button>
                       </div>
                       <p className="text-[10px] text-slate-500 leading-relaxed">
                         {floorplanViewMode === "overview"
-                          ? "Giữ nguyên góc nhìn từ trên xuống như bản vẽ gốc, tô màu và lên vật liệu chân thực cho toàn bộ mặt bằng."
-                          : "Dựng công trình từ bản vẽ mặt bằng thành ảnh chụp thực tế ở góc nhìn kiến trúc 3D (ngang tầm mắt), không còn là góc nhìn từ trên xuống."}
+                          ? t("create.fp.overviewDesc")
+                          : t("create.fp.view3dDesc")}
                       </p>
                     </div>
                   )}
@@ -1785,7 +1796,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black mr-1">
                           2
                         </span>
-                        Chọn Mẫu Poster
+                        {t("create.poster.choose")}
                       </h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
                         <button
@@ -1795,7 +1806,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             posterTemplate === "infographic" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Poster Infographic Tiện ích
+                          {t("create.poster.infographic")}
                         </button>
                         <button
                           type="button"
@@ -1804,13 +1815,13 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             posterTemplate === "luxury" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Poster Luxury Hiện đại
+                          {t("create.poster.luxury")}
                         </button>
                       </div>
                       <p className="text-[10px] text-slate-500 leading-relaxed">
                         {posterTemplate === "infographic"
-                          ? "Ảnh dự án lớn ở dưới, phía trên là dải tiện ích dạng cột đứng có ảnh minh họa và số thứ tự."
-                          : "Nền gradient tối sang trọng, icon tiện ích xung quanh nối bằng nét đứt, phong cách poster BĐS cao cấp quốc tế."}
+                          ? t("create.poster.infographicDesc")
+                          : t("create.poster.luxuryDesc")}
                       </p>
                     </div>
                   )}
@@ -1827,7 +1838,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             blueprintType === "floor_plan" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Mặt bằng (Floor Plan)
+                          {t("create.blueprint.floorPlan")}
                         </button>
                         <button
                           type="button"
@@ -1836,7 +1847,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             blueprintType === "elevation" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Mặt đứng (Elevation)
+                          {t("create.blueprint.elevation")}
                         </button>
                         <button
                           type="button"
@@ -1845,7 +1856,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             blueprintType === "section" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Mặt cắt (Section)
+                          {t("create.blueprint.section")}
                         </button>
                       </div>
                     </div>
@@ -1855,7 +1866,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                   {isDiagramTool && (
                     <div className="bg-[#111827]/60 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                        Chọn Loại Diagram
+                        {t("create.diagram.choose")}
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
                         <button
@@ -1865,7 +1876,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             diagramType === "exploded" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Phối cảnh phân tầng
+                          {t("create.diagram.exploded")}
                         </button>
                         <button
                           type="button"
@@ -1874,7 +1885,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             diagramType === "concept" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Sơ đồ phân tích kiến trúc
+                          {t("create.diagram.concept")}
                         </button>
                         <button
                           type="button"
@@ -1883,7 +1894,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             diagramType === "axon" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Phối cảnh axonometric
+                          {t("create.diagram.axon")}
                         </button>
                         <button
                           type="button"
@@ -1892,7 +1903,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             diagramType === "annotation" ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          Sơ đồ chú thích kiến trúc
+                          {t("create.diagram.annotation")}
                         </button>
                       </div>
                     </div>
@@ -1905,10 +1916,10 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                           2
                         </span>
-                        Tải lên ảnh tham chiếu (Tùy chọn, tối đa {maxRefImages} ảnh)
+                        {t("create.rerender.prefix")} {maxRefImages} {t("create.rerender.suffix")}
                       </h2>
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        AI sẽ tham khảo đường nét & bố cục, vật liệu & bề mặt, ánh sáng, màu sắc và bối cảnh từ ảnh tham chiếu này
+                        {t("create.rerender.desc")}
                       </p>
 
                       <div className="grid grid-cols-3 gap-3">
@@ -1923,7 +1934,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                               <X className="w-3.5 h-3.5" />
                             </button>
                             <div className="absolute bottom-1.5 left-1.5 bg-black/60 px-2 py-0.5 rounded text-[9px] text-slate-300 font-mono">
-                              Ảnh {idx + 1}
+                              {t("create.image")} {idx + 1}
                             </div>
                           </div>
                         ))}
@@ -1931,7 +1942,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {refImages.length < maxRefImages && (
                           <label className="relative aspect-square rounded-xl border border-dashed border-slate-800 hover:border-violet-500 bg-[#080B11]/50 hover:bg-violet-500/5 flex flex-col items-center justify-center cursor-pointer transition text-center p-2 group">
                             <FileImage className="w-6 h-6 text-slate-500 mb-1.5 group-hover:text-violet-400" />
-                            <span className="text-[10px] font-bold text-slate-400">Tải ảnh lên</span>
+                            <span className="text-[10px] font-bold text-slate-400">{t("create.upload.small")}</span>
                             <span className="text-[9px] text-slate-600 mt-0.5">({refImages.length}/{maxRefImages})</span>
                             <input
                               type="file"
@@ -1953,7 +1964,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black mr-1">
                         3
                       </span>
-                      Tùy chọn chi tiết
+                      {t("create.detailOptions")}
                       <HelpCircle className="w-4 h-4 text-slate-400 cursor-pointer hover:text-white transition ml-1.5 shrink-0" />
                     </h2>
 
@@ -1962,9 +1973,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <>
                           {/* 1. Loại phòng */}
                           <CustomDropdown
-                            label="Loại phòng"
+                            label={t("create.roomType")}
                             value={selectedRoom}
-                            options={availableRoomTypes}
+                            options={locOpts(availableRoomTypes)}
                             onChange={(val) => {
                               setSelectedRoom(val);
                               setResultProject(null);
@@ -1973,9 +1984,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 2. Phong cách */}
                           <CustomDropdown
-                            label="Phong cách"
+                            label={t("create.style")}
                             value={selectedStyle}
-                            options={availableDesignStyles}
+                            options={locOpts(availableDesignStyles)}
                             onChange={(val) => {
                               setSelectedStyle(val);
                               setResultProject(null);
@@ -1984,9 +1995,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 3. Ánh sáng */}
                           <CustomDropdown
-                            label="Ánh sáng"
+                            label={t("create.lighting")}
                             value={selectedLighting}
-                            options={LIGHTING_OPTIONS}
+                            options={locOpts(LIGHTING_OPTIONS)}
                             onChange={(val) => {
                               setSelectedLighting(val);
                               setResultProject(null);
@@ -1995,9 +2006,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 4. Tông màu */}
                           <CustomDropdown
-                            label="Tông màu"
+                            label={t("create.color")}
                             value={selectedColor}
-                            options={COLOR_OPTIONS}
+                            options={locOpts(COLOR_OPTIONS)}
                             onChange={(val) => {
                               setSelectedColor(val);
                               setResultProject(null);
@@ -2008,9 +2019,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <>
                           {/* 1. Góc nhìn */}
                           <CustomDropdown
-                            label="Góc nhìn"
+                            label={t("create.view")}
                             value={selectedView}
-                            options={PLANNING_VIEW_OPTIONS}
+                            options={locOpts(PLANNING_VIEW_OPTIONS)}
                             onChange={(val) => {
                               setSelectedView(val);
                               setResultProject(null);
@@ -2019,9 +2030,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 2. Mật độ */}
                           <CustomDropdown
-                            label="Mật độ"
+                            label={t("create.density")}
                             value={selectedDensity}
-                            options={PLANNING_DENSITY_OPTIONS}
+                            options={locOpts(PLANNING_DENSITY_OPTIONS)}
                             onChange={(val) => {
                               setSelectedDensity(val);
                               setResultProject(null);
@@ -2030,9 +2041,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 3. Bối cảnh */}
                           <CustomDropdown
-                            label="Bối cảnh"
+                            label={t("create.context")}
                             value={selectedContext}
-                            options={PLANNING_CONTEXT_OPTIONS}
+                            options={locOpts(PLANNING_CONTEXT_OPTIONS)}
                             onChange={(val) => {
                               setSelectedContext(val);
                               setResultProject(null);
@@ -2041,9 +2052,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 4. Ánh sáng */}
                           <CustomDropdown
-                            label="Ánh sáng"
+                            label={t("create.lighting")}
                             value={selectedLighting}
-                            options={PLANNING_LIGHTING_OPTIONS}
+                            options={locOpts(PLANNING_LIGHTING_OPTIONS)}
                             onChange={(val) => {
                               setSelectedLighting(val);
                               setResultProject(null);
@@ -2052,9 +2063,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 5. Thời tiết */}
                           <CustomDropdown
-                            label="Thời tiết"
+                            label={t("create.weather")}
                             value={selectedWeather}
-                            options={PLANNING_WEATHER_OPTIONS}
+                            options={locOpts(PLANNING_WEATHER_OPTIONS)}
                             onChange={(val) => {
                               setSelectedWeather(val);
                               setResultProject(null);
@@ -2065,9 +2076,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <>
                           {/* 1. Loại công trình */}
                           <CustomDropdown
-                            label="Loại công trình"
+                            label={t("create.buildingType")}
                             value={selectedRoom}
-                            options={availableRoomTypes}
+                            options={locOpts(availableRoomTypes)}
                             onChange={(val) => {
                               setSelectedRoom(val);
                               setResultProject(null);
@@ -2076,9 +2087,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 2. Khu vực */}
                           <CustomDropdown
-                            label="Khu vực"
+                            label={t("create.area")}
                             value={selectedContext}
-                            options={CONTEXT_OPTIONS}
+                            options={locOpts(CONTEXT_OPTIONS)}
                             onChange={(val) => {
                               setSelectedContext(val);
                               setResultProject(null);
@@ -2087,9 +2098,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 3. Thời gian */}
                           <CustomDropdown
-                            label="Thời gian"
+                            label={t("create.time")}
                             value={selectedLighting}
-                            options={LIGHTING_OPTIONS}
+                            options={locOpts(LIGHTING_OPTIONS)}
                             onChange={(val) => {
                               setSelectedLighting(val);
                               setResultProject(null);
@@ -2098,9 +2109,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 4. Thời tiết */}
                           <CustomDropdown
-                            label="Thời tiết"
+                            label={t("create.weather")}
                             value={selectedWeather}
-                            options={WEATHER_OPTIONS}
+                            options={locOpts(WEATHER_OPTIONS)}
                             onChange={(val) => {
                               setSelectedWeather(val);
                               setResultProject(null);
@@ -2111,9 +2122,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <>
                           {/* 1. Loại công trình */}
                           <CustomDropdown
-                            label="Loại công trình"
+                            label={t("create.buildingType")}
                             value={selectedRoom}
-                            options={availableRoomTypes}
+                            options={locOpts(availableRoomTypes)}
                             onChange={(val) => {
                               setSelectedRoom(val);
                               setResultProject(null);
@@ -2122,9 +2133,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 2. Phong cách */}
                           <CustomDropdown
-                            label="Phong cách"
+                            label={t("create.style")}
                             value={selectedStyle}
-                            options={availableDesignStyles}
+                            options={locOpts(availableDesignStyles)}
                             onChange={(val) => {
                               setSelectedStyle(val);
                               setResultProject(null);
@@ -2133,9 +2144,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 3. Góc nhìn */}
                           <CustomDropdown
-                            label="Góc nhìn"
+                            label={t("create.view")}
                             value={selectedView}
-                            options={VIEW_OPTIONS}
+                            options={locOpts(VIEW_OPTIONS)}
                             onChange={(val) => {
                               setSelectedView(val);
                               setResultProject(null);
@@ -2144,9 +2155,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 4. Bối cảnh */}
                           <CustomDropdown
-                            label="Bối cảnh"
+                            label={t("create.context")}
                             value={selectedContext}
-                            options={CONTEXT_OPTIONS}
+                            options={locOpts(CONTEXT_OPTIONS)}
                             onChange={(val) => {
                               setSelectedContext(val);
                               setResultProject(null);
@@ -2155,9 +2166,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 5. Ánh sáng */}
                           <CustomDropdown
-                            label="Ánh sáng"
+                            label={t("create.lighting")}
                             value={selectedLighting}
-                            options={LIGHTING_OPTIONS}
+                            options={locOpts(LIGHTING_OPTIONS)}
                             onChange={(val) => {
                               setSelectedLighting(val);
                               setResultProject(null);
@@ -2166,9 +2177,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                           {/* 6. Thời tiết */}
                           <CustomDropdown
-                            label="Thời tiết"
+                            label={t("create.weather")}
                             value={selectedWeather}
-                            options={WEATHER_OPTIONS}
+                            options={locOpts(WEATHER_OPTIONS)}
                             onChange={(val) => {
                               setSelectedWeather(val);
                               setResultProject(null);
@@ -2187,13 +2198,13 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                         4
                       </span>
-                      Mô tả yêu cầu đặc biệt (Prompts)
+                      {t("create.specialReq")}
                     </h2>
                     <div className="space-y-1.5">
                       <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Mô tả mong muốn của bạn bằng tiếng Việt hoặc tiếng Anh (Ví dụ: Thêm hệ thống đèn LED âm trần màu vàng ấm, đặt thêm vài cây xanh nhiệt đới ở góc phòng, thay sàn thành gỗ xương cá cao cấp...)"
+                        placeholder={t("create.notesPlaceholder")}
                         rows={3}
                         className="w-full bg-[#080B11]/80 border border-slate-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 transition leading-relaxed"
                       />
@@ -2208,13 +2219,13 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                           2
                         </span>
-                        Mô tả ý tưởng
+                        {t("create.ideaDesc")}
                       </h2>
                       <div className="space-y-1.5">
                         <textarea
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Ví dụ: Một phòng khách hiện đại và rộng rãi."
+                          placeholder={t("create.moodboardPlaceholder")}
                           rows={4}
                           className="w-full bg-[#080B11]/80 border border-slate-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 transition leading-relaxed"
                         />
@@ -2229,10 +2240,10 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                           5
                         </span>
-                        Tải lên ảnh tham chiếu (Tối đa 3 ảnh)
+                        {t("create.refUploadTitle")}
                       </h2>
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        Cung cấp thêm ý tưởng, phong cách thiết kế, vật liệu hoặc tông màu mong muốn cho AI tham khảo
+                        {t("create.refUploadDesc")}
                       </p>
                       
                       <div className="grid grid-cols-3 gap-3">
@@ -2249,7 +2260,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                               <X className="w-3.5 h-3.5" />
                             </button>
                             <div className="absolute bottom-1.5 left-1.5 bg-black/60 px-2 py-0.5 rounded text-[9px] text-slate-300 font-mono">
-                              Ảnh {idx + 1}
+                              {t("create.image")} {idx + 1}
                             </div>
                           </div>
                         ))}
@@ -2257,7 +2268,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {refImages.length < 3 && (
                           <label className="relative aspect-square rounded-xl border border-dashed border-slate-800 hover:border-violet-500 bg-[#080B11]/50 hover:bg-violet-500/5 flex flex-col items-center justify-center cursor-pointer transition text-center p-2 group">
                             <FileImage className="w-6 h-6 text-slate-500 mb-1.5 group-hover:text-violet-400" />
-                            <span className="text-[10px] font-bold text-slate-400">Tải ảnh lên</span>
+                            <span className="text-[10px] font-bold text-slate-400">{t("create.upload.small")}</span>
                             <span className="text-[9px] text-slate-600 mt-0.5">({refImages.length}/3)</span>
                             <input
                               type="file"
@@ -2282,7 +2293,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                       {(activeTab === "render_photo" || activeTab === "renovate_ai") ? "6" : (activeTab === "sync_view" || activeTab === "edit_photo" || isSketchNotesTool ? "3" : "5")}
                     </span>
-                    Tỉ Lệ Khung Hình (Aspect Ratio)
+                    {t("create.aspectRatio")}
                   </h2>
                   
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -2325,8 +2336,8 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             {renderRatioBox()}
                           </div>
                           <div className="space-y-0.5">
-                            <div className="text-xs font-bold leading-tight">{opt.name}</div>
-                            <div className="text-[9px] text-slate-500 leading-normal font-medium">{opt.description}</div>
+                            <div className="text-xs font-bold leading-tight">{lang === "en" && opt.nameEn ? opt.nameEn : opt.name}</div>
+                            <div className="text-[9px] text-slate-500 leading-normal font-medium">{lang === "en" && opt.descriptionEn ? opt.descriptionEn : opt.description}</div>
                           </div>
                           {isSelected && (
                             <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-violet-400" />
@@ -2340,7 +2351,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-[10px] text-amber-400 font-medium leading-relaxed mt-2 flex items-start gap-2 shadow-sm animate-fade-in">
                       <span className="text-amber-400 shrink-0 select-none">⚠️</span>
                       <span>
-                        <strong>Lưu ý:</strong> Khi chọn tỉ lệ khung hình khác với tỉ lệ gốc (1:1), khung hình kết quả có thể bị cắt bớt hoặc AI vẽ thêm phần rìa ảnh, có thể ảnh hưởng nhỏ đến tính chính xác của kết cấu ở rìa công trình.
+                        <strong>{t("create.noteLabel")}</strong> {t("create.aspectWarn")}
                       </span>
                     </div>
                   )}
@@ -2352,7 +2363,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                   <div className="space-y-3">
                     <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-violet-400" />
-                      Số Ảnh Cần Tạo
+                      {t("create.imageCount")}
                     </h3>
                     <div className="grid grid-cols-4 gap-2">
                       {[1, 2, 3, 4].map((count) => (
@@ -2382,7 +2393,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <div className="space-y-3">
                       <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Coins className="w-4 h-4 text-amber-400" />
-                        Chất Lượng Ảnh & Chi Phí Render
+                        {t("create.qualityTitle")}
                       </h3>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2404,10 +2415,10 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             >
                               <div className="space-y-0.5">
                                 <div className="text-xs font-extrabold text-slate-100 flex items-center gap-1.5">
-                                  {q.name}
+                                  {lang === "en" && q.nameEn ? q.nameEn : q.name}
                                   {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
                                 </div>
-                                <div className="text-[10px] text-slate-400 leading-normal font-medium">{q.description}</div>
+                                <div className="text-[10px] text-slate-400 leading-normal font-medium">{lang === "en" && q.descriptionEn ? q.descriptionEn : q.description}</div>
                               </div>
                               <div className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1.5 rounded-lg border transition ${
                                 isSelected
@@ -2433,7 +2444,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <span className="w-5.5 h-5.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center text-xs font-black">
                       4
                     </span>
-                    Lựa chọn Model & Số lượng
+                    {t("create.modelQty")}
                   </h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2447,7 +2458,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                     {/* Image counts */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Số lượng ảnh render</label>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t("create.imageQty")}</label>
                       <div className="grid grid-cols-4 gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl">
                         {[1, 2, 3, 4].map((count) => (
                           <button
@@ -2474,7 +2485,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                 <div className="bg-[#111827]/60 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-3">
                   <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-violet-400" />
-                    Lựa Chọn Model
+                    {t("create.modelChoose")}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
                     <div className="py-2.5 rounded-lg text-xs font-black text-center bg-slate-800 text-white">
@@ -2482,7 +2493,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     </div>
                     <div
                       className="py-2.5 rounded-lg text-xs font-bold text-center text-slate-600 cursor-not-allowed"
-                      title="Sắp ra mắt"
+                      title={t("create.comingSoon")}
                     >
                       GPT 2
                     </div>
@@ -2501,7 +2512,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         onClick={onNavigateToPricing}
                         className="bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-black px-4 py-2 rounded-lg hover:from-amber-400 hover:to-amber-500 transition shadow-md"
                       >
-                        Mua Thêm Credit
+                        {t("create.buyCredits")}
                       </button>
                     )}
                   </div>
@@ -2518,10 +2529,10 @@ Không thêm chi tiết mới ngoài hình gốc.`;
               >
                 <Sparkles className="w-5 h-5 fill-white/10" />
                 {activeTab === "sync_view"
-                  ? "Tạo góc nhìn"
+                  ? t("create.btn.sync")
                   : (activeTab === "edit_photo" || isSketchNotesTool)
-                  ? "Bắt đầu Chỉnh sửa"
-                  : `Khởi tạo phối cảnh 3D`
+                  ? t("create.btn.edit")
+                  : t("create.btn.render")
                 }
                 <span className="mx-1.5 opacity-50">•</span>
                 <span className="flex items-center gap-1 bg-zinc-950/20 px-2.5 py-1 rounded-lg text-[11px] font-black">
@@ -2551,7 +2562,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
                         Opzen AI Render Node Connected
                       </div>
-                      <h3 className="font-black text-white text-base">Đang kết xuất bản phối cảnh...</h3>
+                      <h3 className="font-black text-white text-base">{t("create.loading.title")}</h3>
                       
                       {/* Technical terminal log */}
                       <div className="bg-[#080B11] border border-slate-800 p-3.5 rounded-xl font-mono text-[10px] text-violet-400 text-left space-y-1 shadow-inner h-24 overflow-hidden">
@@ -2560,7 +2571,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                           <span className="animate-pulse">● LIVE</span>
                         </div>
                         <div className="text-fuchsia-400 font-semibold animate-fade-in truncate">
-                          {LOADING_MESSAGES[loadingStep]}
+                          {(lang === "en" ? LOADING_MESSAGES_EN : LOADING_MESSAGES)[loadingStep]}
                         </div>
                         <div className="text-slate-500">
                           &gt; Model parameters loaded: Gemini Multi-Modal Engine
@@ -2571,7 +2582,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       </div>
 
                       <p className="text-[10px] text-slate-500 leading-normal">
-                        Mô phỏng phản xạ vật lý ánh sáng thực tế thường mất 5 - 12 giây. Quý khách vui lòng giữ kết nối.
+                        {t("create.loading.desc")}
                       </p>
                     </div>
                   </div>
@@ -2582,10 +2593,10 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded border border-emerald-500/20 uppercase tracking-widest">
                           <ShieldCheck className="w-3.5 h-3.5" />
-                          Kết xuất hoàn tất
+                          {t("create.result.done")}
                         </div>
-                        <h3 className="font-black text-white text-lg">Bản Phối Cải Tạo Của Bạn</h3>
-                        <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Style: {currentStyleOption.name}</p>
+                        <h3 className="font-black text-white text-lg">{t("create.result.title")}</h3>
+                        <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{t("create.style")}: {localizedName(currentStyleOption, lang)}</p>
                       </div>
 
                       {/* Action buttons matching the user's uploaded reference image */}
@@ -2598,7 +2609,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                               ? "bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-600/15"
                               : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800"
                           }`}
-                          title="Đồng bộ góc nhìn giữa ảnh trước và sau cải tạo"
+                          title={t("create.result.syncTitle")}
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${isSyncView ? 'animate-spin' : ''}`} />
                           <span>View Sync</span>
@@ -2615,20 +2626,20 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                             document.body.removeChild(link);
                           }}
                           className="bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl transition flex items-center gap-1.5"
-                          title="Tải ảnh phối cảnh sau cải tạo về thiết bị"
+                          title={t("create.result.downloadTitle")}
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span>Tải ảnh</span>
+                          <span>{t("create.result.download")}</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setIsLightboxOpen(true)}
                           className="bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl transition flex items-center gap-1.5"
-                          title="Xem toàn màn hình không bị cắt hình"
+                          title={t("create.result.zoomTitle")}
                         >
                           <ZoomIn className="w-3.5 h-3.5" />
-                          <span>Phóng to</span>
+                          <span>{t("create.result.zoom")}</span>
                         </button>
 
                         <button
@@ -2639,10 +2650,10 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                               ? "bg-amber-500/20 border-amber-500/40 text-amber-400 animate-pulse"
                               : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800"
                           }`}
-                          title="Lưu vào danh sách yêu thích"
+                          title={t("create.result.favTitle")}
                         >
                           <Star className={`w-3.5 h-3.5 ${isFavorited ? 'fill-amber-400 text-amber-400' : ''}`} />
-                          <span>Yêu thích</span>
+                          <span>{t("create.result.fav")}</span>
                         </button>
                       </div>
                     </div>
@@ -2651,7 +2662,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     {batchResults.length > 1 && (
                       <div className="space-y-2">
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                          Chọn ảnh ưng ý nhất ({batchResults.length} ảnh)
+                          {t("create.result.pickPrefix")}{batchResults.length} {t("create.result.pickSuffix")}
                         </p>
                         <div className="grid grid-cols-4 gap-2.5">
                           {batchResults.map((project) => (
@@ -2665,7 +2676,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                                   : "border-slate-800 hover:border-slate-600"
                               }`}
                             >
-                              <img src={project.afterImage} alt="Kết quả render" className="w-full h-full object-cover" />
+                              <img src={project.afterImage} alt={t("slider.afterAlt")} className="w-full h-full object-cover" />
                             </button>
                           ))}
                         </div>
@@ -2679,23 +2690,23 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                           <div className="relative rounded-xl overflow-hidden border border-slate-900 aspect-square md:aspect-auto">
                             <img
                               src={resultProject.beforeImage}
-                              alt="Trước cải tạo"
+                              alt={t("slider.beforeAlt")}
                               className="w-full h-full object-cover"
                               referrerPolicy="no-referrer"
                             />
                             <span className="absolute top-3 left-3 bg-zinc-950/85 text-white text-[10px] font-black px-2.5 py-1 rounded-full border border-slate-800 uppercase tracking-widest z-10">
-                              Trước (Before)
+                              {t("slider.before")}
                             </span>
                           </div>
                           <div className="relative rounded-xl overflow-hidden border border-slate-900 aspect-square md:aspect-auto">
                             <img
                               src={resultProject.afterImage}
-                              alt="Sau cải tạo"
+                              alt={t("slider.afterAlt")}
                               className="w-full h-full object-cover"
                               referrerPolicy="no-referrer"
                             />
                             <span className="absolute top-3 left-3 bg-violet-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md uppercase tracking-widest z-10">
-                              Sau (After)
+                              {t("slider.after")}
                             </span>
                           </div>
                         </div>
@@ -2710,9 +2721,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
                     {/* Material reports */}
                     <div className="text-left space-y-2 bg-[#0B0F19]/90 p-4 rounded-xl border border-slate-800">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thông số phân tích kiến trúc</div>
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t("create.result.analysisTitle")}</div>
                       <div className="text-[11px] text-slate-300 leading-relaxed font-semibold">
-                        Đã xử lý kết hợp góc chiếu sáng tự nhiên. Các trục dầm đỡ chịu tải chính được tính toán bảo vệ chuẩn quy hoạch. Căn hộ đạt tỉ lệ phản quang tinh khiết.
+                        {t("create.result.analysisText")}
                       </div>
                     </div>
 
@@ -2730,7 +2741,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-violet-500/10"
                       >
                         <Download className="w-4 h-4 stroke-[3]" />
-                        Tải ảnh chất lượng cao (.PNG)
+                        {t("create.result.downloadHigh")}
                       </button>
                     </div>
                   </div>
@@ -2741,9 +2752,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       <Compass className="w-7 h-7" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="font-extrabold text-white text-lg">Màn Hình Kết Xuất 3D</h3>
+                      <h3 className="font-extrabold text-white text-lg">{t("create.empty.title")}</h3>
                       <p className="text-slate-400 text-xs leading-relaxed font-semibold">
-                        Vui lòng tải lên ảnh nguồn ở khung bên trái, tinh chỉnh các thông số cấu hình và click nút "Khởi tạo" để xem kết quả phối cảnh 3D độ chân thực cao so sánh mượt mà tại đây.
+                        {t("create.empty.desc")}
                       </p>
                     </div>
 
@@ -2751,14 +2762,14 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     <div className="pt-3 space-y-2">
                       <button
                         onClick={() => {
-                          alert("Video hướng dẫn: Chọn phân hệ phù hợp -> Tải ảnh nguồn chất lượng tốt không bị rung mờ -> Chọn phong cách và để AI tự động vẽ trong 5 giây!");
+                          alert(t("create.tutorialAlert"));
                         }}
                         className="bg-violet-600 hover:bg-violet-500 text-white font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition duration-200 shadow-md inline-flex items-center gap-2"
                       >
                         <Info className="w-4 h-4" />
-                        Xem hướng dẫn chi tiết
+                        {t("create.tutorial")}
                       </button>
-                      <p className="text-[10px] text-slate-500 font-bold block">Dành cho người dùng mới</p>
+                      <p className="text-[10px] text-slate-500 font-bold block">{t("create.forNewUsers")}</p>
                     </div>
                   </div>
                 )}
@@ -2775,9 +2786,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           {activeTab === "render_photo" && (
             <div className="space-y-6">
               <div className="text-center space-y-2 max-w-2xl mx-auto py-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Bạn muốn Render không gian nào?</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{t("create.catalog.photoTitle")}</h2>
                 <p className="text-slate-400 text-sm">
-                  Chọn chế độ phù hợp để AI tối ưu hóa chất lượng ảnh render của bạn.
+                  {t("create.catalog.photoSub")}
                 </p>
               </div>
 
@@ -2792,7 +2803,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                       setActiveTool({
                         id: tool.id,
                         tab: "render_photo",
-                        name: `Render ${tool.name}`,
+                        name: `Render ${tool.name}`, // tool.name đã theo ngôn ngữ (t)
                         description: tool.description,
                         iconName: tool.iconName
                       });
@@ -2818,7 +2829,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {tool.description}
                       </p>
                       <div className="pt-2 text-xs font-black text-violet-400 group-hover:text-violet-300 flex items-center gap-1.5 transition-colors">
-                        Bắt đầu ngay <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        {t("create.startNow")} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </div>
                     </div>
                   </div>
@@ -2831,9 +2842,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           {activeTab === "render_floorplan" && (
             <div className="space-y-6">
               <div className="text-center space-y-2 max-w-2xl mx-auto py-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Bạn muốn Render mặt bằng nào?</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{t("create.catalog.fpTitle")}</h2>
                 <p className="text-slate-400 text-sm">
-                  Chọn chế độ phù hợp để AI tối ưu hóa kết quả render mặt bằng của bạn.
+                  {t("create.catalog.fpSub")}
                 </p>
               </div>
 
@@ -2844,7 +2855,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     onClick={() => {
                       setSelectedImage(null);
                       setSelectedRoom("living_room");
-                      setNotes(`Render chi tiết 3D mặt bằng của thiết kế này.`);
+                      setNotes(t("create.seed.floorplan"));
                       setActiveTool({
                         id: tool.id,
                         tab: "render_floorplan",
@@ -2874,7 +2885,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {tool.description}
                       </p>
                       <div className="pt-2 text-xs font-black text-violet-400 group-hover:text-violet-300 flex items-center gap-1.5 transition-colors">
-                        Bắt đầu ngay <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        {t("create.startNow")} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </div>
                     </div>
                   </div>
@@ -2887,9 +2898,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           {activeTab === "renovate_ai" && (
             <div className="space-y-6">
               <div className="text-center space-y-2 max-w-2xl mx-auto py-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Bạn muốn Cải tạo không gian nào?</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{t("create.catalog.renovTitle")}</h2>
                 <p className="text-slate-400 text-sm">
-                  Chọn chế độ cải tạo để AI tập trung tối ưu hóa các thành phần không gian phù hợp.
+                  {t("create.catalog.renovSub")}
                 </p>
               </div>
 
@@ -2900,7 +2911,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     onClick={() => {
                       setSelectedImage(null);
                       setSelectedRoom("living_room");
-                      setNotes(`Cải tạo và nâng cấp toàn bộ chất liệu, bố cục sang trọng.`);
+                      setNotes(t("create.seed.renovate"));
                       setActiveTool({
                         id: tool.id,
                         tab: "renovate_ai",
@@ -2932,7 +2943,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                         {tool.description}
                       </p>
                       <div className="pt-2 text-xs font-black text-violet-400 group-hover:text-violet-300 flex items-center gap-1.5 transition-colors">
-                        Bắt đầu ngay <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        {t("create.startNow")} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </div>
                     </div>
                   </div>
@@ -2945,9 +2956,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           {activeTab === "extended_features" && (
             <div className="space-y-6">
               <div className="text-center space-y-2 max-w-2xl mx-auto py-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Khám phá các công cụ AI chuyên sâu</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{t("create.ext.header")}</h2>
                 <p className="text-slate-400 text-sm">
-                  Cung cấp giải pháp thiết kế vượt trội, hoàn thiện mọi ý tưởng quy hoạch từ phác thảo tới chi tiết.
+                  {t("create.ext.sub")}
                 </p>
               </div>
 
@@ -2989,9 +3000,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           {activeTab === "template_library" && (
             <div className="space-y-6">
               <div className="text-center space-y-2 max-w-2xl mx-auto py-4">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">Thư Viện Mẫu</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{t("create.tpl.title")}</h2>
                 <p className="text-slate-400 text-sm">
-                  Tham khảo prompt kiến trúc mẫu kèm ảnh minh họa — sao chép hoặc dùng ngay cho ảnh của bạn.
+                  {t("create.tpl.sub")}
                 </p>
               </div>
 
@@ -3024,17 +3035,17 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <Clock className="w-3.5 h-3.5 text-violet-400" />
-              Các phối cảnh vừa tạo trong phiên của bạn ({sessionHistory.length})
+              {t("create.history.titlePrefix")}{sessionHistory.length})
             </span>
             <button
               onClick={() => {
-                if (confirm("Xóa lịch sử hiển thị trong phiên này? Các bức ảnh vẫn sẽ được giữ lại an toàn trong trang Bộ Sưu Tập 3D.")) {
+                if (confirm(t("create.history.clearConfirm"))) {
                   setSessionHistory([]);
                 }
               }}
               className="text-[10px] text-slate-500 hover:text-rose-400 font-bold uppercase transition"
             >
-              Dọn dẹp nhanh
+              {t("create.history.clear")}
             </button>
           </div>
           
@@ -3053,8 +3064,8 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                   setActiveTool({
                     id: "interior",
                     tab: "render_photo",
-                    name: "Render Nội thất",
-                    description: "Đã phục hồi từ lịch sử.",
+                    name: t("create.history.restoreName"),
+                    description: t("create.history.restoreDesc"),
                     iconName: "Sofa"
                   });
                 }}
@@ -3063,7 +3074,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                     ? "border-violet-500 scale-95 shadow-[0_0_15px_rgba(139,92,246,0.3)]" 
                     : "border-slate-800 hover:border-slate-700"
                 }`}
-                title="Nhấp để phục hồi phối cảnh này và điều chỉnh"
+                title={t("create.history.restoreTitle")}
               >
                 <img src={proj.afterImage} alt="history item" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -3081,9 +3092,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
           {/* Header Controls */}
           <div className="flex justify-between items-center w-full border-b border-slate-800 pb-4">
             <div>
-              <h4 className="text-white font-black text-sm uppercase tracking-wider">Chế độ Xem Toàn Màn Hình</h4>
+              <h4 className="text-white font-black text-sm uppercase tracking-wider">{t("create.lightbox.title")}</h4>
               <p className="text-[10px] text-slate-500 font-mono mt-0.5 uppercase">
-                Tỉ lệ ảnh: {resultProject.aspectRatio || selectedAspectRatio} • Style: {currentStyleOption.name}
+                {t("create.lightbox.ratio")}: {resultProject.aspectRatio || selectedAspectRatio} • {t("create.style")}: {localizedName(currentStyleOption, lang)}
               </p>
             </div>
             <button
@@ -3102,23 +3113,23 @@ Không thêm chi tiết mới ngoài hình gốc.`;
                   <div className="relative rounded-xl overflow-hidden border border-slate-900 aspect-square md:aspect-auto">
                     <img
                       src={resultProject.beforeImage}
-                      alt="Trước cải tạo"
+                      alt={t("slider.beforeAlt")}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
                     <span className="absolute top-3 left-3 bg-zinc-950/85 text-white text-[10px] font-black px-2.5 py-1 rounded-full border border-slate-800 uppercase tracking-widest z-10">
-                      Trước (Before)
+                      {t("slider.before")}
                     </span>
                   </div>
                   <div className="relative rounded-xl overflow-hidden border border-slate-900 aspect-square md:aspect-auto">
                     <img
                       src={resultProject.afterImage}
-                      alt="Sau cải tạo"
+                      alt={t("slider.afterAlt")}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
                     <span className="absolute top-3 left-3 bg-violet-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md uppercase tracking-widest z-10">
-                      Sau (After)
+                      {t("slider.after")}
                     </span>
                   </div>
                 </div>
@@ -3145,7 +3156,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
               }`}
             >
               <RefreshCw className={`w-4 h-4 ${isSyncView ? 'animate-spin' : ''}`} />
-              VIEW SYNC: {isSyncView ? "XEM SONG SONG" : "XEM THANH TRƯỢT"}
+              VIEW SYNC: {isSyncView ? t("create.lightbox.viewSyncParallel") : t("create.lightbox.viewSyncSlider")}
             </button>
 
             <button
@@ -3160,14 +3171,14 @@ Không thêm chi tiết mới ngoài hình gốc.`;
               className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-widest px-6 py-3 rounded-2xl transition flex items-center justify-center gap-2 shadow-lg"
             >
               <Download className="w-4 h-4 stroke-[3]" />
-              Tải ảnh phối cảnh (.PNG)
+              {t("create.lightbox.download")}
             </button>
 
             <button
               onClick={() => setIsLightboxOpen(false)}
               className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center"
             >
-              Đóng lại
+              {t("create.lightbox.close")}
             </button>
           </div>
         </div>

@@ -560,18 +560,18 @@ export const RESOLUTION_OPTIONS: ResolutionOption[] = [
 ];
 
 export const ASPECT_RATIO_OPTIONS: AspectRatioOption[] = [
-  { id: "1:1", name: "1:1 (Vuông)", ratio: "1:1", description: "Bản vẽ vuông cân đối (Mặc định)" },
-  { id: "16:9", name: "16:9 (Ngang)", ratio: "16:9", description: "Màn ảnh rộng (Tivi, Máy tính)" },
-  { id: "4:3", name: "4:3 (Ngang)", ratio: "4:3", description: "Khung ảnh ngang cổ điển" },
-  { id: "9:16", name: "9:16 (Dọc)", ratio: "9:16", description: "Dọc điện thoại (Story, TikTok)" },
-  { id: "3:4", name: "3:4 (Chân dung)", ratio: "3:4", description: "Khung ảnh đứng cổ điển" }
+  { id: "1:1", name: "1:1 (Vuông)", ratio: "1:1", description: "Bản vẽ vuông cân đối (Mặc định)", nameEn: "1:1 (Square)", descriptionEn: "Balanced square frame (Default)" },
+  { id: "16:9", name: "16:9 (Ngang)", ratio: "16:9", description: "Màn ảnh rộng (Tivi, Máy tính)", nameEn: "16:9 (Landscape)", descriptionEn: "Widescreen (TV, computer)" },
+  { id: "4:3", name: "4:3 (Ngang)", ratio: "4:3", description: "Khung ảnh ngang cổ điển", nameEn: "4:3 (Landscape)", descriptionEn: "Classic landscape frame" },
+  { id: "9:16", name: "9:16 (Dọc)", ratio: "9:16", description: "Dọc điện thoại (Story, TikTok)", nameEn: "9:16 (Portrait)", descriptionEn: "Phone vertical (Story, TikTok)" },
+  { id: "3:4", name: "3:4 (Chân dung)", ratio: "3:4", description: "Khung ảnh đứng cổ điển", nameEn: "3:4 (Portrait)", descriptionEn: "Classic portrait frame" }
 ];
 
 export const QUALITY_OPTIONS: QualityOption[] = [
-  { id: "standard", name: "Ảnh tiêu chuẩn", description: "Tối ưu hóa tốc độ xử lý", cost: 5 },
-  { id: "1k", name: "Ảnh 1K", description: "Độ phân giải HD sắc nét", cost: 10 },
-  { id: "3k", name: "Ảnh 3K", description: "Chất lượng cao chuyên nghiệp", cost: 20 },
-  { id: "4k", name: "Ảnh 4K", description: "Độ nét cực đại, siêu chi tiết", cost: 30 }
+  { id: "standard", name: "Ảnh tiêu chuẩn", description: "Tối ưu hóa tốc độ xử lý", cost: 5, nameEn: "Standard image", descriptionEn: "Optimized for processing speed" },
+  { id: "1k", name: "Ảnh 1K", description: "Độ phân giải HD sắc nét", cost: 10, nameEn: "1K image", descriptionEn: "Sharp HD resolution" },
+  { id: "3k", name: "Ảnh 3K", description: "Chất lượng cao chuyên nghiệp", cost: 20, nameEn: "3K image", descriptionEn: "High professional quality" },
+  { id: "4k", name: "Ảnh 4K", description: "Độ nét cực đại, siêu chi tiết", cost: 30, nameEn: "4K image", descriptionEn: "Maximum sharpness, ultra detail" }
 ];
 
 // Thư viện Mẫu: prompt kiến trúc mẫu do admin đăng tải để người dùng tham khảo/sử dụng luôn.
@@ -580,7 +580,9 @@ export const TEMPLATE_POSTS: TemplatePost[] = [
   {
     id: "cao-tang-do-thi-thu-thiem",
     title: "Prompt chi tiết render Cao tầng đô thị",
+    titleEn: "Detailed high-rise urban render prompt",
     category: "Kiến trúc",
+    categoryEn: "Architecture",
     images: [
       "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=1200&q=80",
@@ -609,104 +611,116 @@ export const LOADING_MESSAGES = [
   "📦 Đang đóng gói dữ liệu và tải phối cảnh 3D xuống thiết bị..."
 ];
 
+export const LOADING_MESSAGES_EN = [
+  "⚡ [Opzen AI Engine] Analyzing the source space structure...",
+  "📐 Building the 3D frame, locating windows and light sources...",
+  "🧱 Removing excess furniture and old wall sections...",
+  "🛋️ Applying premium materials and arranging new furniture...",
+  "💡 Fine-tuning lighting and ultra-realistic natural shadows...",
+  "✨ Using the Google Gemini 3.1 model to create a photorealistic render...",
+  "⚡ Finalizing the top-quality Before/After comparison...",
+  "📦 Packaging data and downloading the 3D render to your device..."
+];
+
 export interface DetailedSelectionOption {
   id: string;
   name: string;
   english: string;
+  nameEn?: string; // tên hiển thị tiếng Anh trong dropdown (khác `english` vốn là câu prompt)
 }
 
 export const VIEW_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original perspective" },
-  { id: "eye_level", name: "Góc ngang tầm mắt", english: "eye-level camera view" },
-  { id: "bird_eye", name: "Góc chim bay (Từ trên cao)", english: "bird's eye drone view from above" },
-  { id: "wide_angle", name: "Góc rộng toàn cảnh", english: "wide-angle panoramic view" },
-  { id: "close_up", name: "Góc cận cảnh chi tiết", english: "close-up detail macro view" },
-  { id: "front", name: "Góc trực diện chính diện", english: "straight front architectural view" },
-  { id: "side", name: "Góc nghiêng nghệ thuật", english: "three-quarter side perspective view" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original perspective" },
+  { id: "eye_level", name: "Góc ngang tầm mắt", nameEn: "Eye-level view", english: "eye-level camera view" },
+  { id: "bird_eye", name: "Góc chim bay (Từ trên cao)", nameEn: "Bird's-eye (aerial)", english: "bird's eye drone view from above" },
+  { id: "wide_angle", name: "Góc rộng toàn cảnh", nameEn: "Wide panoramic", english: "wide-angle panoramic view" },
+  { id: "close_up", name: "Góc cận cảnh chi tiết", nameEn: "Close-up detail", english: "close-up detail macro view" },
+  { id: "front", name: "Góc trực diện chính diện", nameEn: "Straight front view", english: "straight front architectural view" },
+  { id: "side", name: "Góc nghiêng nghệ thuật", nameEn: "Artistic side angle", english: "three-quarter side perspective view" }
 ];
 
 export const CONTEXT_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original surrounding context" },
-  { id: "vn_street", name: "Đường phố Việt Nam", english: "typical Vietnamese residential street with neighboring townhouses closely built on both sides, local neighborhood streetscape" },
-  { id: "vn_countryside", name: "Làng quê Việt Nam", english: "peaceful northern Vietnamese rural countryside with green rice paddies, rustic paths, bamboo groves and banana trees background" },
-  { id: "modern_urban", name: "Khu đô thị hiện đại", english: "modern urban district context, contemporary buildings, clean paved streets, manicured street trees, sophisticated urban surroundings" },
-  { id: "t_junction", name: "Ngã ba đường", english: "corner plot at a T-junction street intersection, roads meeting from two directions, wide sidewalk view" },
-  { id: "crossroads", name: "Ngã tư đường", english: "corner plot at a four-way crossroads intersection, streets meeting from all directions, busy urban corner view" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original surrounding context" },
+  { id: "vn_street", name: "Đường phố Việt Nam", nameEn: "Vietnamese street", english: "typical Vietnamese residential street with neighboring townhouses closely built on both sides, local neighborhood streetscape" },
+  { id: "vn_countryside", name: "Làng quê Việt Nam", nameEn: "Vietnamese countryside", english: "peaceful northern Vietnamese rural countryside with green rice paddies, rustic paths, bamboo groves and banana trees background" },
+  { id: "modern_urban", name: "Khu đô thị hiện đại", nameEn: "Modern urban district", english: "modern urban district context, contemporary buildings, clean paved streets, manicured street trees, sophisticated urban surroundings" },
+  { id: "t_junction", name: "Ngã ba đường", nameEn: "T-junction", english: "corner plot at a T-junction street intersection, roads meeting from two directions, wide sidewalk view" },
+  { id: "crossroads", name: "Ngã tư đường", nameEn: "Crossroads", english: "corner plot at a four-way crossroads intersection, streets meeting from all directions, busy urban corner view" }
 ];
 
 export const LIGHTING_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original balance lighting" },
-  { id: "daylight", name: "Ánh sáng ban ngày tự nhiên", english: "bright natural daylight with realistic soft shadows" },
-  { id: "golden_hour", name: "Giờ vàng hoàng hôn ấm áp", english: "golden hour warm sunlight casting long dramatic shadows" },
-  { id: "sunset", name: "Hoàng hôn lãng mạn", english: "vibrant dramatic sunset sky with moody reddish ambient light" },
-  { id: "cozy_warm", name: "Ánh sáng ấm cúng", english: "cozy warm interior ambient lighting, glowing lamps" },
-  { id: "natural_white", name: "Ánh sáng trắng hiện đại", english: "modern bright neutral white lighting" },
-  { id: "ambient_night", name: "Đèn nội thất đêm lung linh", english: "luxurious night interior lights glowing, dark blue starry night outside windows" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original balance lighting" },
+  { id: "daylight", name: "Ánh sáng ban ngày tự nhiên", nameEn: "Natural daylight", english: "bright natural daylight with realistic soft shadows" },
+  { id: "golden_hour", name: "Giờ vàng hoàng hôn ấm áp", nameEn: "Warm golden hour", english: "golden hour warm sunlight casting long dramatic shadows" },
+  { id: "sunset", name: "Hoàng hôn lãng mạn", nameEn: "Romantic sunset", english: "vibrant dramatic sunset sky with moody reddish ambient light" },
+  { id: "cozy_warm", name: "Ánh sáng ấm cúng", nameEn: "Cozy warm light", english: "cozy warm interior ambient lighting, glowing lamps" },
+  { id: "natural_white", name: "Ánh sáng trắng hiện đại", nameEn: "Modern white light", english: "modern bright neutral white lighting" },
+  { id: "ambient_night", name: "Đèn nội thất đêm lung linh", nameEn: "Sparkling night interior", english: "luxurious night interior lights glowing, dark blue starry night outside windows" }
 ];
 
 export const WEATHER_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original climate atmosphere" },
-  { id: "sunny", name: "Nắng rực rỡ", english: "clear sunny sky, bright sunrays" },
-  { id: "cloudy", name: "Trời nhiều mây dịu mát", english: "overcast sky, diffuse soft overcast lighting" },
-  { id: "misty", name: "Sương mù mờ ảo", english: "magical misty foggy atmosphere, soft volume fog" },
-  { id: "light_rain", name: "Mưa nhẹ lãng mạn", english: "peaceful soft light rain drizzle, wet glossy reflections" },
-  { id: "snowy", name: "Tuyết rơi mùa đông", english: "scenic winter snowy weather, soft snowflakes falling, light white snow dusting" },
-  { id: "after_rain", name: "Sau cơn mưa hửng nắng", english: "beautiful clearing sky after rain, double rainbow, fresh clean atmosphere, wet asphalt" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original climate atmosphere" },
+  { id: "sunny", name: "Nắng rực rỡ", nameEn: "Bright sunny", english: "clear sunny sky, bright sunrays" },
+  { id: "cloudy", name: "Trời nhiều mây dịu mát", nameEn: "Cool cloudy", english: "overcast sky, diffuse soft overcast lighting" },
+  { id: "misty", name: "Sương mù mờ ảo", nameEn: "Misty haze", english: "magical misty foggy atmosphere, soft volume fog" },
+  { id: "light_rain", name: "Mưa nhẹ lãng mạn", nameEn: "Romantic light rain", english: "peaceful soft light rain drizzle, wet glossy reflections" },
+  { id: "snowy", name: "Tuyết rơi mùa đông", nameEn: "Winter snow", english: "scenic winter snowy weather, soft snowflakes falling, light white snow dusting" },
+  { id: "after_rain", name: "Sau cơn mưa hửng nắng", nameEn: "Clearing after rain", english: "beautiful clearing sky after rain, double rainbow, fresh clean atmosphere, wet asphalt" }
 ];
 
 export const COLOR_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original color scheme" },
-  { id: "warm_cozy", name: "Tông màu ấm cúng (Warm Cozy)", english: "warm cozy color palette, soft cream, beige, light oak wood and sandy tones" },
-  { id: "cool_modern", name: "Tông màu lạnh hiện đại (Cool Modern)", english: "cool modern color palette, slate gray, charcoal, cool white and muted blue accents" },
-  { id: "elegant_white", name: "Trắng sáng thanh lịch (Elegant White)", english: "bright elegant white color scheme, pure white, ivory plaster, and subtle light ash wood" },
-  { id: "dark_luxury", name: "Trầm ấm sang trọng (Dark Luxury)", english: "dark luxury color scheme, deep walnut wood, charcoal black stone, and gold metal accents" },
-  { id: "soothing_green", name: "Xanh lá dịu mát (Sage Green)", english: "soothing sage green color scheme, off-white plaster, soft olive accents, and natural wood" },
-  { id: "monochrome", name: "Tối giản đơn sắc (Monochrome)", english: "monochrome minimalist palette, stark black, dark gray, and crisp white finishes" },
-  { id: "wood_earth", name: "Màu gỗ & Đất tự nhiên (Earthy Wood)", english: "organic earthy wood palette, rich oak timber, warm terracotta clays, and beige linen textures" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original color scheme" },
+  { id: "warm_cozy", name: "Tông màu ấm cúng (Warm Cozy)", nameEn: "Warm Cozy", english: "warm cozy color palette, soft cream, beige, light oak wood and sandy tones" },
+  { id: "cool_modern", name: "Tông màu lạnh hiện đại (Cool Modern)", nameEn: "Cool Modern", english: "cool modern color palette, slate gray, charcoal, cool white and muted blue accents" },
+  { id: "elegant_white", name: "Trắng sáng thanh lịch (Elegant White)", nameEn: "Elegant White", english: "bright elegant white color scheme, pure white, ivory plaster, and subtle light ash wood" },
+  { id: "dark_luxury", name: "Trầm ấm sang trọng (Dark Luxury)", nameEn: "Dark Luxury", english: "dark luxury color scheme, deep walnut wood, charcoal black stone, and gold metal accents" },
+  { id: "soothing_green", name: "Xanh lá dịu mát (Sage Green)", nameEn: "Sage Green", english: "soothing sage green color scheme, off-white plaster, soft olive accents, and natural wood" },
+  { id: "monochrome", name: "Tối giản đơn sắc (Monochrome)", nameEn: "Monochrome", english: "monochrome minimalist palette, stark black, dark gray, and crisp white finishes" },
+  { id: "wood_earth", name: "Màu gỗ & Đất tự nhiên (Earthy Wood)", nameEn: "Earthy Wood", english: "organic earthy wood palette, rich oak timber, warm terracotta clays, and beige linen textures" }
 ];
 
 export const PLANNING_VIEW_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original perspective" },
-  { id: "eye_level", name: "Tầm mắt người", english: "human eye-level camera view perspective" },
-  { id: "bird_eye", name: "Phối cảnh mắt chim (Toàn cảnh)", english: "bird's-eye view, wide-angle aerial panoramic perspective" },
-  { id: "perspective_45", name: "Phối cảnh 45°", english: "45-degree angle bird's-eye perspective" },
-  { id: "street_view", name: "Góc nhìn đường phố", english: "ground-level street-view perspective" },
-  { id: "front_view", name: "Góc nhìn chính diện", english: "straight front architectural facade perspective" },
-  { id: "worms_eye", name: "Góc nhìn từ dưới lên", english: "low angle worm's-eye view looking up perspective" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original perspective" },
+  { id: "eye_level", name: "Tầm mắt người", nameEn: "Human eye level", english: "human eye-level camera view perspective" },
+  { id: "bird_eye", name: "Phối cảnh mắt chim (Toàn cảnh)", nameEn: "Bird's-eye (panoramic)", english: "bird's-eye view, wide-angle aerial panoramic perspective" },
+  { id: "perspective_45", name: "Phối cảnh 45°", nameEn: "45° perspective", english: "45-degree angle bird's-eye perspective" },
+  { id: "street_view", name: "Góc nhìn đường phố", nameEn: "Street view", english: "ground-level street-view perspective" },
+  { id: "front_view", name: "Góc nhìn chính diện", nameEn: "Front view", english: "straight front architectural facade perspective" },
+  { id: "worms_eye", name: "Góc nhìn từ dưới lên", nameEn: "Worm's-eye (from below)", english: "low angle worm's-eye view looking up perspective" }
 ];
 
 export const PLANNING_DENSITY_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "default density layout" },
-  { id: "low_density_suburban", name: "Ngoại ô thấp tầng", english: "low-density suburban neighborhood layout, sparse detached houses, plenty of gardens" },
-  { id: "medium_density_mixed", name: "Phức hợp vừa", english: "medium-density mixed-use block, moderate-height buildings and townhouses" },
-  { id: "high_density_urban", name: "Đô thị cao tầng", english: "high-density high-rise urban district with compact skyscrapers" },
-  { id: "green_park", name: "Công viên cây xanh", english: "green park open public area, abundant trees, walkways, sparse lightweight structures" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "default density layout" },
+  { id: "low_density_suburban", name: "Ngoại ô thấp tầng", nameEn: "Low-rise suburban", english: "low-density suburban neighborhood layout, sparse detached houses, plenty of gardens" },
+  { id: "medium_density_mixed", name: "Phức hợp vừa", nameEn: "Medium mixed-use", english: "medium-density mixed-use block, moderate-height buildings and townhouses" },
+  { id: "high_density_urban", name: "Đô thị cao tầng", nameEn: "High-rise urban", english: "high-density high-rise urban district with compact skyscrapers" },
+  { id: "green_park", name: "Công viên cây xanh", nameEn: "Green park", english: "green park open public area, abundant trees, walkways, sparse lightweight structures" }
 ];
 
 export const PLANNING_CONTEXT_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "default surrounding context" },
-  { id: "vn_street", name: "Đường phố Việt Nam", english: "vibrant typical Vietnamese urban street context, narrow townhouses, storefronts, motorbikes" },
-  { id: "vn_countryside", name: "Làng quê Việt Nam", english: "peaceful northern Vietnamese countryside, green rice fields, winding river, brick paths" },
-  { id: "modern_city", name: "Khu đô thị hiện đại", english: "sleek modern smart city context, glass facades, clean wide boulevards, neat landscape" },
-  { id: "three_way_junction", name: "Ngã ba đường", english: "dynamic three-way T-junction road intersection with clear lane markings" },
-  { id: "four_way_junction", name: "Ngã tư đường", english: "busy four-way crossroads traffic intersection with traffic lights and crosswalks" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "default surrounding context" },
+  { id: "vn_street", name: "Đường phố Việt Nam", nameEn: "Vietnamese street", english: "vibrant typical Vietnamese urban street context, narrow townhouses, storefronts, motorbikes" },
+  { id: "vn_countryside", name: "Làng quê Việt Nam", nameEn: "Vietnamese countryside", english: "peaceful northern Vietnamese countryside, green rice fields, winding river, brick paths" },
+  { id: "modern_city", name: "Khu đô thị hiện đại", nameEn: "Modern city", english: "sleek modern smart city context, glass facades, clean wide boulevards, neat landscape" },
+  { id: "three_way_junction", name: "Ngã ba đường", nameEn: "T-junction", english: "dynamic three-way T-junction road intersection with clear lane markings" },
+  { id: "four_way_junction", name: "Ngã tư đường", nameEn: "Crossroads", english: "busy four-way crossroads traffic intersection with traffic lights and crosswalks" }
 ];
 
 export const PLANNING_LIGHTING_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original balanced lighting" },
-  { id: "soft_sunrise", name: "Bình minh dịu nhẹ", english: "soft gentle sunrise golden morning lighting with light mist" },
-  { id: "sunny_midday", name: "Buổi trưa nắng", english: "bright sunny midday solar light with short sharp shadows" },
-  { id: "sunset", name: "Hoàng hôn", english: "vibrant sunset golden-hour sky, warm reddish and golden long casting shadows" },
-  { id: "evening_warm", name: "Buổi tối (Đèn vàng)", english: "evening warm street lighting, illuminated windows, glowing ambient yellow light" },
-  { id: "midnight_starry", name: "Đêm khuya (Sao)", english: "midnight starry night sky, dim moonlight, dark blue atmosphere, illuminated building lights" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original balanced lighting" },
+  { id: "soft_sunrise", name: "Bình minh dịu nhẹ", nameEn: "Soft sunrise", english: "soft gentle sunrise golden morning lighting with light mist" },
+  { id: "sunny_midday", name: "Buổi trưa nắng", nameEn: "Sunny midday", english: "bright sunny midday solar light with short sharp shadows" },
+  { id: "sunset", name: "Hoàng hôn", nameEn: "Sunset", english: "vibrant sunset golden-hour sky, warm reddish and golden long casting shadows" },
+  { id: "evening_warm", name: "Buổi tối (Đèn vàng)", nameEn: "Evening (warm light)", english: "evening warm street lighting, illuminated windows, glowing ambient yellow light" },
+  { id: "midnight_starry", name: "Đêm khuya (Sao)", nameEn: "Starry midnight", english: "midnight starry night sky, dim moonlight, dark blue atmosphere, illuminated building lights" }
 ];
 
 export const PLANNING_WEATHER_OPTIONS: DetailedSelectionOption[] = [
-  { id: "default", name: "Mặc định", english: "original weather atmosphere" },
-  { id: "clear_sky", name: "Trời trong xanh", english: "clear blue sunny sky, no clouds, high visibility" },
-  { id: "light_rain", name: "Mưa nhẹ", english: "peaceful soft light rain drizzle, wet glistening streets and surfaces" },
-  { id: "snowy", name: "Tuyết rơi", english: "magical winter snowy weather with gentle snowflakes falling and dusting surfaces" },
-  { id: "harsh_sun", name: "Nắng gắt", english: "harsh direct bright sunlight with strong contrast shadows" },
-  { id: "after_rain", name: "Sau mưa", english: "fresh post-rain clean atmosphere, wet asphalt reflections, clearing sky" }
+  { id: "default", name: "Mặc định", nameEn: "Default", english: "original weather atmosphere" },
+  { id: "clear_sky", name: "Trời trong xanh", nameEn: "Clear sky", english: "clear blue sunny sky, no clouds, high visibility" },
+  { id: "light_rain", name: "Mưa nhẹ", nameEn: "Light rain", english: "peaceful soft light rain drizzle, wet glistening streets and surfaces" },
+  { id: "snowy", name: "Tuyết rơi", nameEn: "Snowfall", english: "magical winter snowy weather with gentle snowflakes falling and dusting surfaces" },
+  { id: "harsh_sun", name: "Nắng gắt", nameEn: "Harsh sun", english: "harsh direct bright sunlight with strong contrast shadows" },
+  { id: "after_rain", name: "Sau mưa", nameEn: "After rain", english: "fresh post-rain clean atmosphere, wet asphalt reflections, clearing sky" }
 ];
 

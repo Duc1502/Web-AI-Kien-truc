@@ -4,6 +4,7 @@ import { DESIGN_STYLES, ROOM_TYPES } from "../config";
 import { Trash2, Download, Eye, Calendar, Tag, Compass, Sparkles, X, ChevronRight, Grid, Copy } from "lucide-react";
 import BeforeAfterSlider from "./BeforeAfterSlider";
 import { useLanguage } from "../i18n/LanguageContext";
+import { localizedName } from "../i18n/content";
 
 const getAspectClass = (ratio?: string) => {
   if (ratio === "16:9") return "aspect-[16/9]";
@@ -40,11 +41,11 @@ export default function GalleryPage({
   }, [selectedProject]);
 
   const getStyleName = (styleId: string) => {
-    return DESIGN_STYLES.find((s) => s.id === styleId)?.name || t("gallery.customStyle");
+    return localizedName(DESIGN_STYLES.find((s) => s.id === styleId), lang, t("gallery.customStyle"));
   };
 
   const getRoomName = (roomId: string) => {
-    return ROOM_TYPES.find((r) => r.id === roomId)?.name || t("gallery.space");
+    return localizedName(ROOM_TYPES.find((r) => r.id === roomId), lang, t("gallery.space"));
   };
 
   const formatDate = (dateStr: string) => {

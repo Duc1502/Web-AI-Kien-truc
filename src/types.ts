@@ -28,6 +28,8 @@ export interface AspectRatioOption {
   name: string;
   ratio: string;
   description: string;
+  nameEn?: string;
+  descriptionEn?: string;
 }
 
 export interface QualityOption {
@@ -35,6 +37,8 @@ export interface QualityOption {
   name: string;
   description: string;
   cost: number;
+  nameEn?: string;
+  descriptionEn?: string;
 }
 
 export interface GeneratedProject {
@@ -56,6 +60,8 @@ export interface TemplatePost {
   category: string;
   images: string[]; // reference/example images shown in the carousel
   prompt: string; // full detailed prompt, pushed into "Mô tả chung" when the user hits "Sử dụng Prompt này"
+  titleEn?: string;
+  categoryEn?: string;
 }
 
 export interface PricingPlan {

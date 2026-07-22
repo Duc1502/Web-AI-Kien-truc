@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { UploadCloud, X, Image as ImageIcon } from "lucide-react";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface ImageUploadProps {
   onImageSelected: (base64String: string) => void;
@@ -12,12 +13,13 @@ export default function ImageUpload({
   selectedImage,
   onClear,
 }: ImageUploadProps) {
+  const { t } = useLanguage();
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn một tệp tin hình ảnh hợp lệ (PNG, JPG, JPEG).");
+      alert(t("create.err.invalidFile"));
       return;
     }
 
@@ -121,13 +123,13 @@ export default function ImageUpload({
               onClick={triggerFileInput}
               className="bg-white text-zinc-900 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-zinc-100 transition shadow"
             >
-              Thay đổi ảnh
+              {t("upload.change")}
             </button>
             <button
               type="button"
               onClick={onClear}
               className="bg-rose-600 text-white p-2 rounded-xl hover:bg-rose-700 transition shadow"
-              title="Xóa ảnh"
+              title={t("upload.delete")}
             >
               <X className="w-5 h-5" />
             </button>
@@ -157,14 +159,14 @@ export default function ImageUpload({
             <UploadCloud className="w-8 h-8" />
           </div>
           <p className="font-semibold text-zinc-800 text-base mb-1">
-            Kéo thả ảnh phòng vào đây, hoặc click để chọn tệp
+            {t("upload.dropHere")}
           </p>
           <p className="text-sm text-zinc-500 max-w-xs mb-4">
-            Hỗ trợ PNG, JPG, JPEG chất lượng cao lên đến 10MB
+            {t("upload.support")}
           </p>
           <div className="inline-flex items-center gap-1.5 bg-zinc-100 text-zinc-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-zinc-200 transition">
             <ImageIcon className="w-4 h-4" />
-            Chọn ảnh hiện tại
+            {t("upload.choose")}
           </div>
         </div>
       )}

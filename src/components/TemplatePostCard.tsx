@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Copy, Check, Sparkles } from "lucide-react";
 import { TemplatePost } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface TemplatePostCardProps {
   post: TemplatePost;
@@ -8,8 +9,11 @@ interface TemplatePostCardProps {
 }
 
 export default function TemplatePostCard({ post, onUsePrompt }: TemplatePostCardProps) {
+  const { t, lang } = useLanguage();
   const [imageIndex, setImageIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const title = lang === "en" && post.titleEn ? post.titleEn : post.title;
+  const category = lang === "en" && post.categoryEn ? post.categoryEn : post.category;
 
   const prevImage = () => setImageIndex((i) => (i - 1 + post.images.length) % post.images.length);
   const nextImage = () => setImageIndex((i) => (i + 1) % post.images.length);
@@ -24,8 +28,8 @@ export default function TemplatePostCard({ post, onUsePrompt }: TemplatePostCard
     <div className="bg-[#111827]/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
       <div className="p-5 pb-3 flex items-center justify-between gap-3">
         <div>
-          <span className="text-[10px] font-black text-violet-400 uppercase tracking-widest">{post.category}</span>
-          <h3 className="text-base font-black text-white leading-snug">{post.title}</h3>
+          <span className="text-[10px] font-black text-violet-400 uppercase tracking-widest">{category}</span>
+          <h3 className="text-base font-black text-white leading-snug">{title}</h3>
         </div>
       </div>
 
@@ -33,7 +37,7 @@ export default function TemplatePostCard({ post, onUsePrompt }: TemplatePostCard
         <div className="relative aspect-video bg-[#080B11] group">
           <img
             src={post.images[imageIndex]}
-            alt={`${post.title} - ảnh ${imageIndex + 1}`}
+            alt={`${title} - ${t("create.image")} ${imageIndex + 1}`}
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
@@ -80,7 +84,7 @@ export default function TemplatePostCard({ post, onUsePrompt }: TemplatePostCard
             className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-white text-[11px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl transition"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? "Đã sao chép!" : "Copy Prompt"}
+            {copied ? t("gallery.copied") : "Copy Prompt"}
           </button>
           <button
             type="button"
@@ -88,7 +92,7 @@ export default function TemplatePostCard({ post, onUsePrompt }: TemplatePostCard
             className="flex items-center gap-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-[11px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl transition shadow-[0_0_15px_rgba(139,92,246,0.2)]"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Sử dụng Prompt này
+            {t("create.tpl.usePrompt")}
           </button>
         </div>
       </div>

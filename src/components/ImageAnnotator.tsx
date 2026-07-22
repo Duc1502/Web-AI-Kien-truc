@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, MapPin } from "lucide-react";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export interface EditMarker {
   id: string;
@@ -48,6 +49,7 @@ export default function ImageAnnotator({
   onChange,
   maxMarkers = 10,
 }: ImageAnnotatorProps) {
+  const { t } = useLanguage();
   const [dragStart, setDragStart] = useState<Point | null>(null);
   const [dragCurrent, setDragCurrent] = useState<Point | null>(null);
 
@@ -127,7 +129,7 @@ export default function ImageAnnotator({
           atLimit ? "cursor-not-allowed" : "cursor-crosshair"
         }`}
       >
-        <img src={image} alt="Ảnh cần chỉnh sửa" className="w-full h-auto block pointer-events-none" draggable={false} />
+        <img src={image} alt={t("annotator.imageAlt")} className="w-full h-auto block pointer-events-none" draggable={false} />
 
         {markers.map((marker, idx) => (
           <div
@@ -151,7 +153,7 @@ export default function ImageAnnotator({
                 removeMarker(marker.id);
               }}
               className="absolute -top-3 -right-3 bg-slate-950 hover:bg-red-500 text-white rounded-full p-1 border border-slate-700 opacity-0 group-hover/marker:opacity-100 transition"
-              title="Xóa vùng đánh dấu"
+              title={t("annotator.deleteMarker")}
             >
               <X className="w-3 h-3" />
             </button>
@@ -174,7 +176,7 @@ export default function ImageAnnotator({
       <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider">
         <span className="flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5" />
-          Kéo để khoanh vùng cần sửa (chọn điểm đầu và điểm cuối) ({markers.length}/{maxMarkers})
+          {t("annotator.dragHint")} ({markers.length}/{maxMarkers})
         </span>
         {markers.length > 0 && (
           <button
@@ -182,7 +184,7 @@ export default function ImageAnnotator({
             onClick={() => onChange([])}
             className="text-slate-500 hover:text-red-400 transition normal-case font-semibold"
           >
-            Xóa tất cả
+            {t("annotator.clearAll")}
           </button>
         )}
       </div>
@@ -197,7 +199,7 @@ export default function ImageAnnotator({
               <textarea
                 value={marker.text}
                 onChange={(e) => updateMarkerText(marker.id, e.target.value)}
-                placeholder={`Mô tả thay đổi mong muốn tại vùng ${idx + 1}...`}
+                placeholder={`${t("annotator.notePre")} ${idx + 1}...`}
                 rows={2}
                 className="flex-1 bg-transparent text-xs text-white placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
               />
