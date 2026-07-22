@@ -27,6 +27,20 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Hỗ trợ ưu tiên 24/7",
       "Tính năng truy cập sớm",
     ],
+    en: {
+      description: "An entry plan for newcomers.",
+      durationLabel: "Valid for: 1 month",
+      billingNote: "Auto-renewal",
+      features: [
+        "3,000 Credits total",
+        "Standard plan",
+        "Valid for: 1 month",
+        "Access to all AI tools",
+        "Standard render speed",
+        "Priority 24/7 support",
+        "Early access features",
+      ],
+    },
   },
   {
     id: "pro",
@@ -49,6 +63,21 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Hỗ trợ ưu tiên 24/7",
       "Tính năng truy cập sớm",
     ],
+    en: {
+      description: "The best choice for architects & freelancers.",
+      durationLabel: "Valid for: 3 months",
+      billingNote: "Auto-renewal",
+      badge: "MOST POPULAR",
+      features: [
+        "7,000 Credits total",
+        "Valid for: 3 months",
+        "Optimized cost & performance",
+        "Access to all AI tools",
+        "High render speed",
+        "Priority 24/7 support",
+        "Early access features",
+      ],
+    },
   },
   {
     id: "ultra",
@@ -69,6 +98,20 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Hỗ trợ ưu tiên 24/7",
       "Tính năng truy cập sớm",
     ],
+    en: {
+      description: "The optimal solution for studios and businesses.",
+      durationLabel: "Valid for: 6 months",
+      billingNote: "Auto-renewal",
+      features: [
+        "25,000 Credits total",
+        "Valid for: 6 months",
+        "Lowest cost per credit",
+        "Access to all AI tools",
+        "Ultra-fast render speed",
+        "Priority 24/7 support",
+        "Early access features",
+      ],
+    },
   },
 ];
 

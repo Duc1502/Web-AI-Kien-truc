@@ -1,5 +1,7 @@
 import { Coins, Sparkles, Menu, X, Landmark, Image as ImageIcon, Zap, LogOut, UserRound } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "../i18n/LanguageContext";
+import LanguageToggle from "./LanguageToggle";
 
 interface AuthUser {
   email: string;
@@ -21,14 +23,15 @@ export default function Header({
   onLoginGoogle,
   onLogout,
 }: HeaderProps) {
+  const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   const navItems = [
-    { id: "landing", label: "Trang Chủ" },
-    { id: "create", label: "Studio Cải Tạo" },
-    { id: "gallery", label: "Bộ Sưu Tập 3D" },
-    { id: "pricing", label: "Bảng Giá" },
+    { id: "landing", label: t("nav.home") },
+    { id: "create", label: t("nav.studio") },
+    { id: "gallery", label: t("nav.gallery") },
+    { id: "pricing", label: t("nav.pricing") },
   ];
 
   return (
@@ -81,13 +84,16 @@ export default function Header({
               <div className="flex items-center gap-2.5 bg-[#151D2F] border border-slate-700/80 rounded-xl px-3.5 py-1.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]">
                 <Coins className="w-4 h-4 text-amber-400 fill-amber-400/10 animate-spin-slow" />
                 <div className="flex flex-col text-left">
-                  <span className="text-[9px] text-slate-400 uppercase tracking-widest leading-none font-bold">Số dư Credits</span>
+                  <span className="text-[9px] text-slate-400 uppercase tracking-widest leading-none font-bold">{t("header.creditsBalance")}</span>
                   <span className="text-xs font-black text-amber-400 mt-0.5">
                     {authUser.creditsBalance} CR
                   </span>
                 </div>
               </div>
             )}
+
+            {/* Công tắc ngôn ngữ — đặt bên TRÁI nút đăng nhập/tài khoản */}
+            <LanguageToggle />
 
             {/* Account: Google login / user menu */}
             {authUser ? (
@@ -112,7 +118,7 @@ export default function Header({
                       className="w-full flex items-center gap-2 text-xs font-bold text-red-400 hover:bg-red-500/10 px-2 py-2 rounded-lg transition"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      Đăng xuất
+                      {t("header.logout")}
                     </button>
                   </div>
                 )}
@@ -122,7 +128,7 @@ export default function Header({
                 onClick={onLoginGoogle}
                 className="flex items-center gap-2 bg-white hover:bg-slate-200 text-zinc-950 text-xs font-black px-4 py-2.5 rounded-xl transition active:scale-95"
               >
-                Đăng nhập Google
+                {t("header.login")}
               </button>
             )}
           </div>
@@ -170,11 +176,17 @@ export default function Header({
           </div>
 
           <div className="border-t border-slate-800 pt-4 flex flex-col gap-4">
+            {/* Công tắc ngôn ngữ trên menu mobile */}
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{t("header.langLabel")}</span>
+              <LanguageToggle />
+            </div>
+
             {authUser && (
               <div className="flex items-center gap-2.5 bg-[#151D2F] border border-slate-800 rounded-xl p-4">
                 <Coins className="w-5 h-5 text-amber-400 fill-amber-400/10" />
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Số dư tài khoản</div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{t("header.accountBalance")}</div>
                   <div className="text-sm font-black text-amber-400">{authUser.creditsBalance} Credits</div>
                 </div>
               </div>
@@ -184,7 +196,7 @@ export default function Header({
               <div className="bg-[#151D2F] border border-slate-800 rounded-xl p-4 space-y-3">
                 <div className="text-xs font-bold text-slate-300 truncate">{authUser.email}</div>
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                  Credit đã mua: <span className="text-violet-300">{authUser.creditsBalance}</span>
+                  {t("header.creditsPurchased")}: <span className="text-violet-300">{authUser.creditsBalance}</span>
                 </div>
                 <button
                   onClick={() => {
@@ -194,7 +206,7 @@ export default function Header({
                   className="w-full flex items-center justify-center gap-2 text-xs font-bold text-red-400 border border-red-500/20 py-2.5 rounded-lg"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  Đăng xuất
+                  {t("header.logout")}
                 </button>
               </div>
             ) : (
@@ -205,7 +217,7 @@ export default function Header({
                 }}
                 className="w-full bg-white text-zinc-950 py-3 rounded-xl font-black text-xs"
               >
-                Đăng nhập Google
+                {t("header.login")}
               </button>
             )}
           </div>

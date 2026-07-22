@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MoveHorizontal } from "lucide-react";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface BeforeAfterSliderProps {
   before: string;
@@ -14,6 +15,7 @@ export default function BeforeAfterSlider({
   className = "",
   aspectRatio = "aspect-square",
 }: BeforeAfterSliderProps) {
+  const { t } = useLanguage();
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,22 +80,22 @@ export default function BeforeAfterSlider({
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >
-      {/* After Image (lớp nền, full) — lộ ra ở nửa PHẢI, khớp nhãn "Sau (After)" */}
+      {/* After Image (lớp nền, full) — lộ ra ở nửa PHẢI, khớp nhãn "Sau/After" */}
       <img
         src={after}
-        alt="Sau khi cải tạo"
+        alt={t("slider.afterAlt")}
         className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
         referrerPolicy="no-referrer"
       />
 
       <div className="absolute top-4 left-4 bg-zinc-900/70 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
-        Trước (Before)
+        {t("slider.before")}
       </div>
 
-      {/* Before Image (lớp phủ, cắt lộ ở nửa TRÁI) — khớp nhãn "Trước (Before)" */}
+      {/* Before Image (lớp phủ, cắt lộ ở nửa TRÁI) — khớp nhãn "Trước/Before" */}
       <img
         src={before}
-        alt="Trước khi cải tạo"
+        alt={t("slider.beforeAlt")}
         className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
         style={{
           clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
@@ -102,7 +104,7 @@ export default function BeforeAfterSlider({
       />
 
       <div className="absolute top-4 right-4 bg-teal-600/85 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
-        Sau (After)
+        {t("slider.after")}
       </div>
 
       {/* Slider Bar */}

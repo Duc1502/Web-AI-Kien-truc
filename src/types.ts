@@ -71,6 +71,14 @@ export interface PricingPlan {
   features: string[];
   highlighted?: boolean; // gói "Phổ biến nhất"
   badge?: string;
+  // Bản dịch tiếng Anh cho các trường hiển thị (giá/credits/id giữ nguyên). Thiếu thì fallback về VI.
+  en?: {
+    description?: string;
+    durationLabel?: string;
+    billingNote?: string;
+    features?: string[];
+    badge?: string;
+  };
 }
 
 export interface CreditHistory {

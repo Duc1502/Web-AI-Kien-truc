@@ -3,6 +3,7 @@ import { GeneratedProject } from "../types";
 import { DESIGN_STYLES, ROOM_TYPES } from "../config";
 import { Trash2, Download, Eye, Calendar, Tag, Compass, Sparkles, X, ChevronRight, Grid, Copy } from "lucide-react";
 import BeforeAfterSlider from "./BeforeAfterSlider";
+import { useLanguage } from "../i18n/LanguageContext";
 
 const getAspectClass = (ratio?: string) => {
   if (ratio === "16:9") return "aspect-[16/9]";
@@ -29,6 +30,7 @@ export default function GalleryPage({
   onDeleteProject,
   onNavigateToCreate,
 }: GalleryPageProps) {
+  const { t, lang } = useLanguage();
   const [selectedProject, setSelectedProject] = useState<GeneratedProject | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -38,17 +40,17 @@ export default function GalleryPage({
   }, [selectedProject]);
 
   const getStyleName = (styleId: string) => {
-    return DESIGN_STYLES.find((s) => s.id === styleId)?.name || "Phong cách riêng";
+    return DESIGN_STYLES.find((s) => s.id === styleId)?.name || t("gallery.customStyle");
   };
 
   const getRoomName = (roomId: string) => {
-    return ROOM_TYPES.find((r) => r.id === roomId)?.name || "Không gian";
+    return ROOM_TYPES.find((r) => r.id === roomId)?.name || t("gallery.space");
   };
 
   const formatDate = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString("vi-VN", {
+      return d.toLocaleDateString(lang === "en" ? "en-US" : "vi-VN", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -76,10 +78,10 @@ export default function GalleryPage({
         <div className="text-left space-y-1">
           <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
             <Grid className="w-7 h-7 text-teal-400" />
-            BẢN ĐỒ THIẾT KẾ CỦA BẠN
+            {t("gallery.title")}
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm">
-            Nơi lưu trữ những tác phẩm cải tạo không gian sống đỉnh cao, chân thực bởi Gemini AI.
+            {t("gallery.subtitle")}
           </p>
         </div>
 
@@ -89,7 +91,7 @@ export default function GalleryPage({
             className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition duration-200 flex items-center gap-2 shadow-[0_0_15px_rgba(20,184,166,0.15)]"
           >
             <Sparkles className="w-4 h-4 fill-zinc-950/20" />
-            Tạo phối cảnh mới
+            {t("gallery.createNew")}
           </button>
         )}
       </div>
@@ -101,16 +103,16 @@ export default function GalleryPage({
             <Compass className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h3 className="font-extrabold text-lg text-white">Chưa Có Bản Thiết Kế Nào</h3>
+            <h3 className="font-extrabold text-lg text-white">{t("gallery.emptyTitle")}</h3>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto font-semibold">
-              Hiện tại bạn chưa thực hiện phiên render cải tạo nào. Hãy tải lên ảnh phòng cũ, lựa chọn phong cách yêu thích và bắt đầu tái định vị không gian sống của bạn ngay!
+              {t("gallery.emptyDesc")}
             </p>
           </div>
           <button
             onClick={onNavigateToCreate}
             className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-widest px-6 py-3 rounded-xl transition duration-200 shadow-lg"
           >
-            Bắt đầu cải tạo phòng đầu tiên
+            {t("gallery.emptyCta")}
           </button>
         </div>
       ) : (
@@ -136,19 +138,19 @@ export default function GalleryPage({
                     onClick={() => setSelectedProject(project)}
                     className="bg-white text-zinc-950 px-4 py-2 rounded-xl hover:bg-slate-100 transition text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow"
                   >
-                    <Eye className="w-4 h-4" /> So sánh slider
+                    <Eye className="w-4 h-4" /> {t("gallery.compareSlider")}
                   </button>
                   <button
                     onClick={() => downloadImage(project.afterImage, `opzen-after-${project.id}.png`)}
                     className="bg-[#111827] border border-slate-700 text-slate-200 p-2.5 rounded-xl hover:bg-slate-800 transition shadow"
-                    title="Tải ảnh sau cải tạo"
+                    title={t("gallery.downloadAfterTitle")}
                   >
                     <Download className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => onDeleteProject(project.id)}
                     className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-2.5 rounded-xl hover:bg-rose-500 hover:text-white transition shadow"
-                    title="Xóa bản thiết kế"
+                    title={t("gallery.deleteTitle")}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -172,7 +174,7 @@ export default function GalleryPage({
                     </p>
                   ) : (
                     <p className="text-xs text-slate-500 italic leading-normal">
-                      Cải tạo hoàn mỹ theo tiêu chuẩn kiến trúc 3D.
+                      {t("gallery.defaultNote")}
                     </p>
                   )}
                 </div>
@@ -186,7 +188,7 @@ export default function GalleryPage({
                     onClick={() => setSelectedProject(project)}
                     className="text-teal-400 hover:text-teal-300 transition flex items-center gap-1 font-black"
                   >
-                    Xem chi tiết <ChevronRight className="w-3.5 h-3.5" />
+                    {t("gallery.viewDetails")} <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -212,7 +214,7 @@ export default function GalleryPage({
                   {getRoomName(selectedProject.roomTypeId)} &mdash; {getStyleName(selectedProject.styleId)}
                 </h3>
                 <p className="text-xs text-slate-500 font-mono mt-0.5">
-                  ID: {selectedProject.id} • KẾT XUẤT LÚC: {formatDate(selectedProject.createdAt)}
+                  ID: {selectedProject.id} • {t("gallery.renderedAt")}: {formatDate(selectedProject.createdAt)}
                 </p>
               </div>
 
@@ -228,7 +230,7 @@ export default function GalleryPage({
               {selectedProject.notes && (
                 <div className="text-left bg-[#080B11]/80 p-4 rounded-xl border border-slate-800/85">
                   <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    Yêu cầu ban đầu của bạn
+                    {t("gallery.yourRequest")}
                   </span>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
                     &ldquo;{selectedProject.notes}&rdquo;
@@ -241,7 +243,7 @@ export default function GalleryPage({
                 <div className="text-left bg-[#080B11]/80 p-4 rounded-xl border border-slate-800/85 space-y-2.5">
                   <div className="flex items-center justify-between gap-4">
                     <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                      Prompt chi tiết tạo ảnh (Detailed AI Prompt)
+                      {t("gallery.detailedPrompt")}
                     </span>
                     <button
                       onClick={() => {
@@ -252,7 +254,7 @@ export default function GalleryPage({
                       className="text-[10px] font-black text-teal-400 hover:text-teal-300 transition uppercase tracking-wider flex items-center gap-1.5 bg-teal-500/10 hover:bg-teal-500/20 px-2.5 py-1.5 rounded-lg border border-teal-500/20"
                     >
                       <Copy className="w-3.5 h-3.5" />
-                      {copied ? "Đã sao chép!" : "Sao chép Prompt"}
+                      {copied ? t("gallery.copied") : t("gallery.copyPrompt")}
                     </button>
                   </div>
                   <div className="max-h-[160px] overflow-y-auto rounded-lg bg-[#05070c] p-3.5 text-[11px] font-mono text-slate-300 leading-relaxed border border-slate-900 scrollbar-thin whitespace-pre-wrap select-all">
@@ -269,7 +271,7 @@ export default function GalleryPage({
                   }}
                   className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition"
                 >
-                  Tải ảnh trước cải tạo (Before)
+                  {t("gallery.downloadBefore")}
                 </button>
                 <button
                   onClick={() => {
@@ -277,7 +279,7 @@ export default function GalleryPage({
                   }}
                   className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-lg shadow-teal-500/10"
                 >
-                  Tải ảnh sau cải tạo (After)
+                  {t("gallery.downloadAfter")}
                 </button>
               </div>
             </div>

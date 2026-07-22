@@ -1,6 +1,8 @@
 import { Check } from "lucide-react";
 import { PRICING_PLANS } from "../config";
 import { PricingPlan } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
+import type { Lang } from "../i18n/translations";
 
 interface PricingPageProps {
   onSelectPlan: (plan: PricingPlan) => void;
@@ -10,20 +12,29 @@ function formatVnd(amount: number): string {
   return amount.toLocaleString("vi-VN");
 }
 
+// Ghép bản dịch EN của gói lên trên bản VI (giá/credits/id giữ nguyên). Thiếu field EN thì dùng VI.
+function localizePlan(plan: PricingPlan, lang: Lang): PricingPlan {
+  if (lang === "en" && plan.en) return { ...plan, ...plan.en };
+  return plan;
+}
+
 export default function PricingPage({ onSelectPlan }: PricingPageProps) {
+  const { t, lang } = useLanguage();
   return (
     <div className="space-y-12 pb-16 text-slate-100">
       <div className="text-center max-w-2xl mx-auto space-y-3 pt-8">
         <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase">
-          Bảng Giá Gói Sử Dụng AI
+          {t("pricing.title")}
         </h1>
         <p className="text-slate-400 text-sm sm:text-base">
-          Chọn gói cước phù hợp với nhu cầu sáng tạo của bạn. Không phí ẩn, hủy bất cứ lúc nào.
+          {t("pricing.subtitle")}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
-        {PRICING_PLANS.map((plan) => (
+        {PRICING_PLANS.map((rawPlan) => {
+          const plan = localizePlan(rawPlan, lang);
+          return (
           <div
             key={plan.id}
             className={`relative rounded-3xl border p-8 flex flex-col ${
@@ -69,7 +80,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
               }`}
             >
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1.5">
-                Nhận ngay
+                {t("pricing.getInstantly")}
               </span>
               {plan.credits.toLocaleString("en-US")} Credits
             </div>
@@ -84,17 +95,18 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
             </ul>
 
             <button
-              onClick={() => onSelectPlan(plan)}
+              onClick={() => onSelectPlan(rawPlan)}
               className={`w-full py-3.5 rounded-xl font-black text-sm transition active:scale-95 ${
                 plan.highlighted
                   ? "bg-gradient-to-r from-fuchsia-500 to-violet-500 hover:from-fuchsia-400 hover:to-violet-400 text-white shadow-lg"
                   : "bg-white hover:bg-slate-200 text-zinc-950"
               }`}
             >
-              Chọn gói này
+              {t("pricing.selectPlan")}
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

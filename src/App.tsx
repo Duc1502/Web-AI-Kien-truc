@@ -3,18 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { GeneratedProject, PricingPlan } from "./types";
 import { supabase, isSupabaseConfigured, UserProfile } from "./lib/supabaseClient";
-
-// Mỗi "chức năng" (tab) gắn với 1 URL riêng, để chuyển mục là đổi URL (không còn dồn hết vào "/").
-const TAB_TO_PATH: Record<string, string> = {
-  landing: "/",
-  create: "/studio",
-  gallery: "/bo-suu-tap",
-  pricing: "/bang-gia",
-  checkout: "/thanh-toan",
-};
-const PATH_TO_TAB: Record<string, string> = Object.fromEntries(
-  Object.entries(TAB_TO_PATH).map(([tab, path]) => [path, tab])
-);
+import { useLanguage } from "./i18n/LanguageContext";
+import { TAB_PATHS, PATH_TO_TAB } from "./i18n/routes";
 import Header from "./components/Header";
 import LandingPage from "./components/LandingPage";
 import CreatePage from "./components/CreatePage";
@@ -26,10 +16,20 @@ import { Sparkles, HelpCircle, Mail, Phone, ExternalLink, ShieldCheck, Zap } fro
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { lang, t } = useLanguage();
   // "Tab hiện tại" suy ra từ URL thay vì state — nhờ vậy Header/footer/CreatePage giữ nguyên cách
-  // gọi setCurrentTab(...) nhưng thực chất là điều hướng URL.
+  // gọi setCurrentTab(...) nhưng thực chất là điều hướng URL (theo ngôn ngữ đang chọn).
   const currentTab = PATH_TO_TAB[location.pathname] ?? "landing";
-  const setCurrentTab = (tab: string) => navigate(TAB_TO_PATH[tab] ?? "/");
+  const setCurrentTab = (tab: string) => navigate(TAB_PATHS[lang][tab] ?? "/");
+
+  // Đổi ngôn ngữ → đưa URL sang slug tương ứng của ngôn ngữ mới (vd /bo-suu-tap ↔ /gallery),
+  // giữ nguyên đang ở tab nào. Chỉ phụ thuộc lang để tránh vòng lặp điều hướng.
+  useEffect(() => {
+    const tab = PATH_TO_TAB[location.pathname] ?? "landing";
+    const target = TAB_PATHS[lang][tab] ?? "/";
+    if (location.pathname !== target) navigate(target, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   const [projects, setProjects] = useState<GeneratedProject[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export default function App() {
 
   const handleLoginGoogle = () => {
     if (!isSupabaseConfigured) {
-      showToast("⚠️ Đăng nhập chưa khả dụng: thiếu cấu hình Supabase (VITE_SUPABASE_URL/ANON_KEY).");
+      showToast(t("toast.loginUnavailable"));
       return;
     }
     supabase.auth.signInWithOAuth({
@@ -237,56 +237,56 @@ export default function App() {
                 </span>
               </div>
               <p className="text-xs leading-relaxed text-slate-500 font-semibold">
-                OpzenAI.vn ứng dụng mô hình đa phương tiện thế hệ mới nhất của Google Gemini AI để biến đổi hình ảnh hiện trạng căn phòng hay mặt tiền cũ kỹ thành bản phối cảnh kiến trúc 3D sắc nét theo chuẩn cao cấp quốc tế chỉ trong vài giây.
+                {t("footer.desc")}
               </p>
             </div>
 
             <div className="md:col-span-3 space-y-3">
-              <h4 className="text-white text-xs font-black uppercase tracking-widest">Sản phẩm & Tính năng</h4>
+              <h4 className="text-white text-xs font-black uppercase tracking-widest">{t("footer.productsTitle")}</h4>
               <ul className="text-xs space-y-2 text-slate-400 font-bold">
                 <li>
                   <button onClick={() => setCurrentTab("create")} className="hover:text-teal-400 transition">
-                    Thiết kế cải tạo phòng ngủ 3D
+                    {t("footer.product1")}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setCurrentTab("create")} className="hover:text-teal-400 transition">
-                    Cải tạo mặt tiền nhà phố (Facade)
+                    {t("footer.product2")}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setCurrentTab("create")} className="hover:text-teal-400 transition">
-                    Thiết kế sân vườn biệt thự (Landscape)
+                    {t("footer.product3")}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setCurrentTab("create")} className="hover:text-teal-400 transition">
-                    Phác thảo tay sang bản phối (Sketch to Render)
+                    {t("footer.product4")}
                   </button>
                 </li>
               </ul>
             </div>
 
             <div className="md:col-span-2 space-y-3">
-              <h4 className="text-white text-xs font-black uppercase tracking-widest">Lộ trình phát triển</h4>
+              <h4 className="text-white text-xs font-black uppercase tracking-widest">{t("footer.roadmapTitle")}</h4>
               <ul className="text-xs space-y-2 text-slate-500 font-semibold">
                 <li>
-                  <span className="text-teal-400 font-bold">Phase 1: Thử nghiệm miễn phí</span>
+                  <span className="text-teal-400 font-bold">{t("footer.roadmap1")}</span>
                 </li>
                 <li>
-                  <span>Phase 2: Đăng nhập & Lưu trữ Cloud</span>
+                  <span>{t("footer.roadmap2")}</span>
                 </li>
                 <li>
-                  <span>Phase 3: Xuất mô hình CAD/3ds Max</span>
+                  <span>{t("footer.roadmap3")}</span>
                 </li>
                 <li>
-                  <span>Điều khoản dịch vụ bảo mật</span>
+                  <span>{t("footer.roadmap4")}</span>
                 </li>
               </ul>
             </div>
 
             <div className="md:col-span-3 space-y-3">
-              <h4 className="text-white text-xs font-black uppercase tracking-widest">Hỗ trợ & Hợp tác</h4>
+              <h4 className="text-white text-xs font-black uppercase tracking-widest">{t("footer.supportTitle")}</h4>
               <div className="text-xs space-y-2.5 font-semibold text-slate-400">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-slate-500" />
@@ -296,11 +296,11 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-slate-500" />
-                  <span>Trung tâm tư vấn & triển khai dự án</span>
+                  <span>{t("footer.supportCenter")}</span>
                 </div>
                 <div className="pt-2">
                   <span className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-lg font-mono text-[10px]">
-                    Powered by Gemini Multimodal Engine
+                    {t("footer.poweredBy")}
                   </span>
                 </div>
               </div>
@@ -309,15 +309,15 @@ export default function App() {
 
           <div className="border-t border-slate-900 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-slate-500 font-bold uppercase tracking-wider">
             <span>
-              &copy; {new Date().getFullYear()} OpzenAI.vn. Toàn quyền bản quyền thiết kế được bảo vệ.
+              &copy; {new Date().getFullYear()} OpzenAI.vn. {t("footer.rights")}
             </span>
             <div className="flex items-center gap-4 font-mono text-[10px]">
               <span className="flex items-center gap-1">
-                Render Nodes: {new Date().toLocaleDateString("vi-VN")}
+                {t("footer.renderNodes")}: {new Date().toLocaleDateString(lang === "en" ? "en-US" : "vi-VN")}
               </span>
               <span>•</span>
               <span className="text-teal-400 font-black">
-                Phase 1 Active
+                {t("footer.phaseActive")}
               </span>
             </div>
           </div>
