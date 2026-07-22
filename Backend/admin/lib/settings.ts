@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "./supabase/server";
 
 export interface SystemSettings {
   credit_cost_by_resolution: Record<string, number>;
+  estimated_cost_usd_by_resolution: Record<string, number>;
   new_user_free_credits: number;
   default_variants_per_generation: number;
   cost_alert_threshold_usd_per_day: number;

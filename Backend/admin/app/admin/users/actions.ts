@@ -26,26 +26,23 @@ export async function adjustCredit(userId: string, formData: FormData) {
 
   const supabaseAdmin = createSupabaseAdminClient();
 
-  const { data: before, error: fetchError } = await supabaseAdmin
-    .from("profiles")
-    .select("credits_balance")
-    .eq("id", userId)
-    .single();
-  if (fetchError || !before) throw new Error("Không tìm thấy user.");
+  // Dùng RPC atomic (một câu UPDATE có FOR UPDATE) thay vì đọc-sửa-ghi ở tầng app, để không
+  // ghi đè số dư khi user đang render (deduct_credits/refund_credits) song song.
+  const { data: result, error: rpcError } = await supabaseAdmin.rpc("admin_adjust_credits", {
+    p_user_id: userId,
+    p_delta: delta,
+  });
+  if (rpcError) throw new Error(`Cập nhật credit thất bại: ${rpcError.message}`);
+  if (!result) throw new Error("Không tìm thấy user.");
 
-  const newBalance = Math.max(0, before.credits_balance + delta);
-
-  const { error: updateError } = await supabaseAdmin
-    .from("profiles")
-    .update({ credits_balance: newBalance, updated_at: new Date().toISOString() })
-    .eq("id", userId);
-  if (updateError) throw new Error(`Cập nhật credit thất bại: ${updateError.message}`);
+  const before = Number((result as { before: number }).before);
+  const newBalance = Number((result as { after: number }).after);
 
   await logAdminAction({
     adminId: admin.userId,
     action: "credit_adjust",
     targetUserId: userId,
-    beforeValue: { credits_balance: before.credits_balance },
+    beforeValue: { credits_balance: before },
     afterValue: { credits_balance: newBalance },
     note: `${delta > 0 ? "Cộng" : "Trừ"} ${Math.abs(delta)} credit. Lý do: ${note}`,
   });
@@ -132,7 +129,7 @@ export async function resetFreeCredits(userId: string, formData: FormData) {
     .select("value")
     .eq("key", "new_user_free_credits")
     .single();
-  const defaultCredits = Number(setting?.value ?? 50);
+  const defaultCredits = Number(setting?.value ?? 100);
 
   const { data: before } = await supabaseAdmin
     .from("profiles")

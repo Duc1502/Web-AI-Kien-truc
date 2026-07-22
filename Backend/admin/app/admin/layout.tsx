@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { signOutAction } from "./logout-action";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Tổng quan" },
@@ -34,6 +35,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="pt-6 mt-6 border-t border-slate-800 px-3 text-[11px] text-slate-500">
           Đăng nhập: {admin.email}
         </div>
+        <form action={signOutAction} className="px-1 pt-2">
+          <button
+            type="submit"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition"
+          >
+            Đăng xuất
+          </button>
+        </form>
       </aside>
       <main className="flex-1 p-8">{children}</main>
     </div>

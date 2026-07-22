@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
@@ -23,6 +24,30 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAdmin =
   supabaseUrl && supabaseServiceRoleKey ? createClient(supabaseUrl, supabaseServiceRoleKey) : null;
+
+// Upload một ảnh (data URL base64) lên bucket private "renders" để Admin Dashboard hiển thị
+// thumbnail (ảnh gốc → ảnh kết quả). Trả về object path đã lưu, hoặc null nếu lỗi — bọc kín để
+// sự cố Storage KHÔNG làm hỏng luồng render/trừ credit. Admin đọc lại qua signed URL (service_role).
+async function uploadRenderImage(objectPath: string, dataUrl: string): Promise<string | null> {
+  if (!supabaseAdmin || !dataUrl) return null;
+  try {
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    const contentType = match ? match[1] : "image/png";
+    const base64 = match ? match[2] : dataUrl;
+    const buffer = Buffer.from(base64, "base64");
+    const { error } = await supabaseAdmin.storage
+      .from("renders")
+      .upload(objectPath, buffer, { contentType, upsert: true });
+    if (error) {
+      console.error(`Upload render image thất bại (${objectPath}):`, error.message);
+      return null;
+    }
+    return objectPath;
+  } catch (err) {
+    console.error(`Upload render image lỗi (${objectPath}):`, err);
+    return null;
+  }
+}
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -83,9 +108,11 @@ app.post("/api/checkout/create-order", async (req, res): Promise<any> => {
 app.post("/api/generate", async (req, res): Promise<any> => {
   let deductedUserId: string | null = null;
   let deductedAmount = 0;
+  let estimatedCostUsd = 0;
   let generationRoomType: string | undefined;
   let generationStyle: string | undefined;
   let generationResolution: string | undefined;
+  const generationId = randomUUID(); // id cố định để đặt tên object Storage khớp với hàng generations
   const generationStartedAt = Date.now();
 
   try {
@@ -164,6 +191,21 @@ app.post("/api/generate", async (req, res): Promise<any> => {
       "4k": 30,
     };
     const cost = costMap[resolutionKey] ?? 10;
+
+    // Giá vốn API ước tính (USD) cho lượt render này — ghi vào generations.estimated_cost_usd để
+    // Overview/Costs có số chi phí/lợi nhuận thật. Admin chỉnh bảng giá này trong Settings.
+    const { data: apiCostSetting } = await supabaseAdmin
+      .from("settings")
+      .select("value")
+      .eq("key", "estimated_cost_usd_by_resolution")
+      .single();
+    const apiCostMap = (apiCostSetting?.value as Record<string, number> | null) || {
+      standard: 0.02,
+      "1k": 0.04,
+      "3k": 0.10,
+      "4k": 0.15,
+    };
+    estimatedCostUsd = apiCostMap[resolutionKey] ?? 0;
 
     const { data: newBalance, error: deductError } = await supabaseAdmin.rpc("deduct_credits", {
       p_user_id: userId,
@@ -830,12 +872,23 @@ Không được tự ý thiết kế lại, sáng tạo thêm hoặc chỉnh s�
     }
 
     if (supabaseAdmin && deductedUserId) {
+      // Lưu ảnh gốc + ảnh kết quả lên Storage (private). Path gắn với generationId để về sau
+      // Admin Dashboard tra ngược được. Lỗi upload trả null → cột URL để trống, không chặn insert.
+      const [beforePath, afterPath] = await Promise.all([
+        uploadRenderImage(`${deductedUserId}/${generationId}/before.png`, image),
+        uploadRenderImage(`${deductedUserId}/${generationId}/after.png`, renovatedImageBase64),
+      ]);
+
       await supabaseAdmin.from("generations").insert({
+        id: generationId,
         user_id: deductedUserId,
         room_type: generationRoomType,
         style: generationStyle,
         resolution: generationResolution,
         credits_spent: deductedAmount,
+        estimated_cost_usd: estimatedCostUsd,
+        before_image_url: beforePath,
+        after_image_url: afterPath,
         status: "success",
         processing_time_ms: Date.now() - generationStartedAt,
       });
@@ -856,11 +909,13 @@ Không được tự ý thiết kế lại, sáng tạo thêm hoặc chỉnh s�
     if (supabaseAdmin && deductedUserId && deductedAmount > 0) {
       await supabaseAdmin.rpc("refund_credits", { p_user_id: deductedUserId, p_amount: deductedAmount });
       await supabaseAdmin.from("generations").insert({
+        id: generationId,
         user_id: deductedUserId,
         room_type: generationRoomType,
         style: generationStyle,
         resolution: generationResolution,
         credits_spent: 0,
+        estimated_cost_usd: 0, // render lỗi → không tính chi phí (đã hoàn credit, không có ảnh ra)
         status: "error",
         error_message: error.message || "Lỗi không xác định",
         processing_time_ms: Date.now() - generationStartedAt,

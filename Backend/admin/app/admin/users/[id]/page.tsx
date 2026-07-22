@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSignedRenderUrls } from "@/lib/storage";
 import { formatNumber, formatVnd } from "@/lib/format";
 import { adjustCredit, setAccountLocked, changePlan, resetFreeCredits } from "../actions";
 
@@ -38,6 +39,11 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
       .order("created_at", { ascending: false })
       .limit(30),
   ]);
+
+  // Ảnh render lưu ở bucket private → tạo signed URL để hiển thị thumbnail.
+  const signedUrls = await getSignedRenderUrls(
+    (generations ?? []).flatMap((g) => [g.before_image_url, g.after_image_url])
+  );
 
   return (
     <div className="space-y-8">
@@ -131,20 +137,34 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
           <section className="rounded-2xl border border-slate-800 bg-[#111827]/60 p-5">
             <h3 className="text-sm font-black text-white uppercase tracking-wider mb-3">Lịch sử render</h3>
             <div className="space-y-2 max-h-72 overflow-y-auto">
-              {(generations ?? []).map((g) => (
-                <div key={g.id} className="flex items-center gap-3 text-xs border-b border-slate-800 pb-2">
-                  {g.after_image_url && (
-                    <img src={g.after_image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-                  )}
-                  <div className="flex-1">
-                    <div className="text-slate-300 font-semibold">{g.room_type} · {g.style}</div>
-                    <div className="text-slate-500">{new Date(g.created_at).toLocaleString("vi-VN")}</div>
+              {(generations ?? []).map((g) => {
+                const beforeUrl = g.before_image_url ? signedUrls[g.before_image_url] : undefined;
+                const afterUrl = g.after_image_url ? signedUrls[g.after_image_url] : undefined;
+                return (
+                  <div key={g.id} className="flex items-center gap-3 text-xs border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-1 shrink-0">
+                      {beforeUrl ? (
+                        <img src={beforeUrl} alt="Ảnh gốc" className="w-10 h-10 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-[#0e1420] border border-slate-800" />
+                      )}
+                      <span className="text-slate-600">→</span>
+                      {afterUrl ? (
+                        <img src={afterUrl} alt="Ảnh kết quả" className="w-10 h-10 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-[#0e1420] border border-slate-800" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-slate-300 font-semibold">{g.room_type} · {g.style}</div>
+                      <div className="text-slate-500">{new Date(g.created_at).toLocaleString("vi-VN")}</div>
+                    </div>
+                    <div className={g.status === "success" ? "text-emerald-400" : "text-red-400"}>
+                      {g.status === "success" ? `-${g.credits_spent} cr` : "Lỗi"}
+                    </div>
                   </div>
-                  <div className={g.status === "success" ? "text-emerald-400" : "text-red-400"}>
-                    {g.status === "success" ? `-${g.credits_spent} cr` : "Lỗi"}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {(generations ?? []).length === 0 && <p className="text-xs text-slate-500">Chưa có lượt render nào.</p>}
             </div>
           </section>

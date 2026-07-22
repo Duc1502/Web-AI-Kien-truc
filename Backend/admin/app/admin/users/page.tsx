@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatVnd } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +20,13 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
 
   const supabase = await createSupabaseServerClient();
 
+  // Đọc từ view admin_user_overview để có sẵn render_count + total_deposited_vnd (SQL aggregate).
   let query = supabase
-    .from("profiles")
-    .select("id, email, created_at, credits_balance, credits_used_total, plan, is_locked, role", {
-      count: "exact",
-    });
+    .from("admin_user_overview")
+    .select(
+      "id, email, created_at, credits_balance, credits_used_total, plan, is_locked, role, render_count, total_deposited_vnd",
+      { count: "exact" }
+    );
 
   if (q) query = query.ilike("email", `%${q}%`);
   if (filter === "paid") query = query.eq("plan", "paid");
@@ -90,6 +92,8 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
               <th className="text-left px-4 py-3">Ngày đăng ký</th>
               <th className="text-right px-4 py-3">Số dư credit</th>
               <th className="text-right px-4 py-3">Đã dùng</th>
+              <th className="text-right px-4 py-3">Số render</th>
+              <th className="text-right px-4 py-3">Tổng nạp (VND)</th>
               <th className="text-left px-4 py-3">Gói</th>
               <th className="text-left px-4 py-3">Trạng thái</th>
             </tr>
@@ -107,6 +111,8 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                 </td>
                 <td className="px-4 py-3 text-right font-bold text-amber-400">{formatNumber(user.credits_balance)}</td>
                 <td className="px-4 py-3 text-right text-slate-400">{formatNumber(user.credits_used_total)}</td>
+                <td className="px-4 py-3 text-right text-slate-400">{formatNumber(user.render_count)}</td>
+                <td className="px-4 py-3 text-right text-emerald-400">{formatVnd(user.total_deposited_vnd)}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
                     user.plan === "paid" ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-700/50 text-slate-400"
@@ -125,7 +131,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
             ))}
             {(users ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
                   Không tìm thấy user nào.
                 </td>
               </tr>

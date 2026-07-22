@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 const SETTING_LABELS: Record<string, string> = {
   credit_cost_by_resolution: "Giá credit theo độ phân giải (HD/1K/2K/4K)",
+  estimated_cost_usd_by_resolution: "Giá vốn API ước tính (USD/ảnh) theo độ phân giải",
   new_user_free_credits: "Số credit tặng user mới",
   default_variants_per_generation: "Số biến thể mặc định mỗi lượt render",
   cost_alert_threshold_usd_per_day: "Ngưỡng cảnh báo chi phí (USD/ngày)",
