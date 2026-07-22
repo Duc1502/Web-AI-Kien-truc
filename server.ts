@@ -1,10 +1,8 @@
 import express from "express";
-import path from "path";
 import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
-import { createServer as createViteServer } from "vite";
 import { PRICING_PLANS } from "./src/config";
 
 // Load environment variables (.env.local takes precedence, matching README setup instructions)
@@ -12,7 +10,6 @@ dotenv.config();
 dotenv.config({ path: ".env.local", override: true });
 
 const app = express();
-const PORT = 3000;
 
 // Setup JSON body parsing with high limit for base64 images
 app.use(express.json({ limit: "50mb" }));
@@ -50,12 +47,12 @@ async function uploadRenderImage(objectPath: string, dataUrl: string): Promise<s
 }
 
 // Health check
-app.get("/api/health", (req, res) => {
+export const handleHealth = (req: any, res: any) => {
   res.json({ status: "ok", message: "CảiTạoNhà.AI API is running smoothly!" });
-});
+};
 
 // API: Tạo đơn hàng nạp credit (trạng thái pending), chờ đối soát VietQR thủ công/tự động.
-app.post("/api/checkout/create-order", async (req, res): Promise<any> => {
+export const handleCreateOrder = async (req: any, res: any): Promise<any> => {
   try {
     if (!supabaseAdmin) {
       return res.status(500).json({
@@ -102,10 +99,10 @@ app.post("/api/checkout/create-order", async (req, res): Promise<any> => {
       error: error.message || "Đã xảy ra lỗi khi tạo đơn hàng.",
     });
   }
-});
+};
 
 // API: Generate image renovation
-app.post("/api/generate", async (req, res): Promise<any> => {
+export const handleGenerate = async (req: any, res: any): Promise<any> => {
   let deductedUserId: string | null = null;
   let deductedAmount = 0;
   let estimatedCostUsd = 0;
@@ -926,30 +923,12 @@ Không được tự ý thiết kế lại, sáng tạo thêm hoặc chỉnh s�
       error: error.message || "Đã xảy ra lỗi không xác định trong quá trình sinh ảnh.",
     });
   }
-});
+};
 
-// Start server function
-async function startServer() {
-  // Vite integration for dev mode
-  if (process.env.NODE_ENV !== "production") {
-    console.log("Starting server in DEVELOPMENT mode with Vite integration...");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    console.log("Starting server in PRODUCTION mode...");
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
+// Đăng ký route cho bản chạy Express local (npm run dev qua dev-server.ts). Trên Vercel,
+// các file api/*.ts import trực tiếp các handler này (không đi qua Express), nên phần này bỏ qua.
+app.get("/api/health", handleHealth);
+app.post("/api/checkout/create-order", handleCreateOrder);
+app.post("/api/generate", handleGenerate);
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`CảiTạoNhà.AI running on port http://localhost:${PORT}`);
-  });
-}
-
-startServer();
+export { app };
