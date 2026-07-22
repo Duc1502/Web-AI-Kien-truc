@@ -78,10 +78,10 @@ export default function BeforeAfterSlider({
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >
-      {/* Before Image (Bottom) */}
+      {/* After Image (lớp nền, full) — lộ ra ở nửa PHẢI, khớp nhãn "Sau (After)" */}
       <img
-        src={before}
-        alt="Trước khi cải tạo"
+        src={after}
+        alt="Sau khi cải tạo"
         className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
         referrerPolicy="no-referrer"
       />
@@ -90,10 +90,10 @@ export default function BeforeAfterSlider({
         Trước (Before)
       </div>
 
-      {/* After Image (Top, Clipped) */}
+      {/* Before Image (lớp phủ, cắt lộ ở nửa TRÁI) — khớp nhãn "Trước (Before)" */}
       <img
-        src={after}
-        alt="Sau khi cải tạo"
+        src={before}
+        alt="Trước khi cải tạo"
         className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
         style={{
           clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
