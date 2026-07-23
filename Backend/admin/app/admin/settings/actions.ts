@@ -37,3 +37,40 @@ export async function updateSetting(key: string, formData: FormData) {
 
   revalidatePath("/admin/settings");
 }
+
+// Ô cấu hình riêng cho tài khoản nhận tiền SePay/VietQR — nhập theo trường rõ ràng thay vì JSON thô.
+export async function updateSepayBankInfo(formData: FormData) {
+  const admin = await requireAdmin();
+  const account_number = String(formData.get("account_number") ?? "").trim();
+  const bank_code = String(formData.get("bank_code") ?? "").trim();
+  const account_holder = String(formData.get("account_holder") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim() || "Cập nhật tài khoản nhận tiền SePay";
+
+  if (!account_number || !bank_code) {
+    throw new Error("Bắt buộc nhập Số tài khoản và Mã ngân hàng.");
+  }
+
+  const value = { account_number, bank_code, account_holder };
+  const supabaseAdmin = createSupabaseAdminClient();
+  const { data: before } = await supabaseAdmin
+    .from("settings")
+    .select("value")
+    .eq("key", "sepay_bank_info")
+    .maybeSingle();
+
+  const { error } = await supabaseAdmin
+    .from("settings")
+    .upsert({ key: "sepay_bank_info", value, updated_at: new Date().toISOString(), updated_by: admin.userId });
+  if (error) throw new Error(`Cập nhật thất bại: ${error.message}`);
+
+  await logAdminAction({
+    adminId: admin.userId,
+    action: "settings_update",
+    targetUserId: null,
+    beforeValue: { key: "sepay_bank_info", value: before?.value ?? null },
+    afterValue: { key: "sepay_bank_info", value },
+    note,
+  });
+
+  revalidatePath("/admin/settings");
+}
