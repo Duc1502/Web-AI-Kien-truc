@@ -1100,7 +1100,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Mô hình AI đang bận hoặc có lỗi xảy ra.");
+        const err: any = new Error(data.error || t("create.err.generic"));
+        err.code = data.errorCode; // mã lỗi để hiển thị thông báo thân thiện, song ngữ
+        throw err;
       }
 
       // Server ưu tiên trả về URL ảnh trong Supabase Storage (nhẹ, hỗ trợ 3K/4K, không nhồi base64
@@ -1140,7 +1142,7 @@ Không thêm chi tiết mới ngoài hình gốc.`;
 
       if (successes.length === 0) {
         const firstFailure = outcomes.find((o): o is PromiseRejectedResult => o.status === "rejected");
-        throw new Error(firstFailure?.reason?.message || "Mô hình AI đang bận hoặc có lỗi xảy ra.");
+        throw firstFailure?.reason ?? new Error(t("create.err.generic")); // giữ nguyên .code để map thông báo
       }
 
       // Credit đã được server trừ/hoàn theo từng lượt (thành công giữ nguyên, lỗi tự hoàn lại).
@@ -1153,9 +1155,9 @@ Không thêm chi tiết mới ngoài hình gốc.`;
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(
-        err.message || "Không thể kết nối với AI Studio. Hãy kiểm tra cài đặt GEMINI_API_KEY trong tab Secrets."
-      );
+      // Có mã lỗi từ server → hiển thị thông báo thân thiện theo ngôn ngữ; không có thì dùng message thô.
+      const friendly = err?.code ? t(`create.err.${err.code}`) : (err?.message || t("create.err.generic"));
+      setErrorMessage(friendly);
     } finally {
       setIsLoading(false);
       onCreditsUpdated();
