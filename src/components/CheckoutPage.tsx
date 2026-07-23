@@ -1,25 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, ShieldCheck, Gem, Ticket, Loader2, CheckCircle2, Copy } from "lucide-react";
 import { PricingPlan } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
+import { supabase } from "../lib/supabaseClient";
 
 interface CheckoutPageProps {
   plan: PricingPlan;
   userId: string;
   onBack: () => void;
+  onPaid?: () => void; // cộng credit xong → App làm mới số dư
 }
 
 function formatVnd(amount: number): string {
   return amount.toLocaleString("vi-VN");
 }
 
+interface BankInfo {
+  accountNumber: string;
+  bankCode: string;
+  accountHolder: string;
+}
+
 interface PendingOrder {
   transactionId: string;
   referenceCode: string;
   amountVnd: number;
+  qrUrl: string | null;
+  bankInfo: BankInfo | null;
 }
 
-export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps) {
+async function getAccessToken(): Promise<string | undefined> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token;
+}
+
+export default function CheckoutPage({ plan, onBack, onPaid }: CheckoutPageProps) {
   const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,7 +42,10 @@ export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<PendingOrder | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [paid, setPaid] = useState(false);
+  const onPaidRef = useRef(onPaid);
+  onPaidRef.current = onPaid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,11 +54,14 @@ export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps
     setIsSubmitting(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const res = await fetch("/api/checkout/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
-          userId,
           planId: plan.id,
           fullName: fullName.trim(),
           phone: phone.trim(),
@@ -56,11 +77,42 @@ export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps
     }
   };
 
-  const handleCopyReference = () => {
-    if (!order) return;
-    navigator.clipboard.writeText(order.referenceCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Sau khi tạo đơn, poll trạng thái mỗi 4s. Khi webhook SePay cộng credit (status='success')
+  // thì hiện màn hình thành công và báo App làm mới số dư.
+  useEffect(() => {
+    if (!order || paid) return;
+    let stopped = false;
+    const interval = setInterval(async () => {
+      try {
+        const accessToken = await getAccessToken();
+        const res = await fetch("/api/checkout/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({ transactionId: order.transactionId }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!stopped && data.status === "success") {
+          setPaid(true);
+          onPaidRef.current?.();
+        }
+      } catch {
+        // im lặng — thử lại ở lần poll sau
+      }
+    }, 4000);
+    return () => {
+      stopped = true;
+      clearInterval(interval);
+    };
+  }, [order, paid]);
+
+  const copyText = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   return (
@@ -80,9 +132,23 @@ export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-        {/* Left: form or pending payment instructions */}
+        {/* Left: form → QR payment → success */}
         <div className="lg:col-span-3 bg-[#0d1220] border border-slate-800 rounded-3xl p-8 space-y-6">
-          {!order ? (
+          {paid ? (
+            <div className="flex flex-col items-center text-center gap-4 py-8">
+              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                <CheckCircle2 className="w-11 h-11 text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-black text-white">{t("checkout.paidTitle")}</h2>
+              <p className="text-sm text-slate-400 max-w-sm">{t("checkout.paidDesc")}</p>
+              <button
+                onClick={onBack}
+                className="mt-2 bg-gradient-to-r from-fuchsia-500 to-violet-500 hover:from-fuchsia-400 hover:to-violet-400 text-white font-black px-8 py-3.5 rounded-xl transition active:scale-95"
+              >
+                {t("checkout.backToApp")}
+              </button>
+            </div>
+          ) : !order ? (
             <>
               <div>
                 <h2 className="text-xl font-black text-white">{t("checkout.formTitle")}</h2>
@@ -140,24 +206,63 @@ export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps
                   <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                   {t("checkout.orderCreated")}
                 </h2>
-                <p className="text-sm text-slate-400 mt-1">
-                  {t("checkout.orderInstructions")}
-                </p>
+                <p className="text-sm text-slate-400 mt-1">{t("checkout.orderInstructions")}</p>
               </div>
 
               <div className="bg-[#151d2f] border border-slate-700 rounded-2xl p-6 flex flex-col items-center gap-4">
-                <div className="w-40 h-40 rounded-xl bg-white/5 border border-dashed border-slate-600 flex items-center justify-center text-[11px] text-slate-500 text-center px-3">
-                  {t("checkout.qrPlaceholder")}
-                </div>
-                <div className="w-full space-y-2 text-sm">
-                  <div className="flex justify-between">
+                {order.qrUrl ? (
+                  <>
+                    <p className="text-sm font-black text-white">{t("checkout.scanQr")}</p>
+                    <img
+                      src={order.qrUrl}
+                      alt="VietQR"
+                      className="w-56 h-56 rounded-xl bg-white p-2 object-contain"
+                    />
+                    <p className="text-[11px] text-slate-400 text-center">{t("checkout.scanQrHint")}</p>
+                  </>
+                ) : (
+                  <div className="w-full rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs p-4 text-center leading-relaxed">
+                    {t("checkout.qrNotConfigured")}
+                  </div>
+                )}
+
+                <div className="w-full space-y-2.5 text-sm pt-2 border-t border-slate-700/60">
+                  {order.bankInfo && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">{t("checkout.bankName")}</span>
+                        <span className="font-bold text-white">{order.bankInfo.bankCode}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">{t("checkout.bankAccount")}</span>
+                        <button
+                          onClick={() => copyText(order.bankInfo!.accountNumber, "acc")}
+                          className="flex items-center gap-1.5 font-mono font-black text-violet-300 hover:text-violet-200 transition"
+                        >
+                          {order.bankInfo.accountNumber}
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">{t("checkout.accountHolder")}</span>
+                        <span className="font-bold text-white uppercase">{order.bankInfo.accountHolder}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t("checkout.amount")}</span>
-                    <span className="font-black text-white">{formatVnd(order.amountVnd)} đ</span>
+                    <button
+                      onClick={() => copyText(String(order.amountVnd), "amount")}
+                      className="flex items-center gap-1.5 font-black text-white hover:text-violet-200 transition"
+                    >
+                      {formatVnd(order.amountVnd)} đ
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t("checkout.transferContent")}</span>
                     <button
-                      onClick={handleCopyReference}
+                      onClick={() => copyText(order.referenceCode, "ref")}
                       className="flex items-center gap-1.5 font-mono font-black text-violet-300 hover:text-violet-200 transition"
                     >
                       {order.referenceCode}
@@ -167,10 +272,13 @@ export default function CheckoutPage({ plan, userId, onBack }: CheckoutPageProps
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate-500 leading-relaxed text-center">
-                {copied ? t("checkout.copied") : ""}
-                {t("checkout.pending")}
-              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-amber-300 font-semibold">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t("checkout.waitingPayment")}
+              </div>
+
+              {copied && <p className="text-[11px] text-emerald-400 text-center">{t("checkout.copied")}</p>}
+              <p className="text-[11px] text-slate-500 leading-relaxed text-center">{t("checkout.pending")}</p>
             </>
           )}
         </div>

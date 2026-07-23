@@ -212,6 +212,7 @@ export default function App() {
               plan={selectedPlan}
               userId={session.user.id}
               onBack={() => setCurrentTab("pricing")}
+              onPaid={refreshProfile}
             />
           ) : (
             // Vào thẳng/refresh /thanh-toan khi chưa chọn gói → không còn selectedPlan trong state,

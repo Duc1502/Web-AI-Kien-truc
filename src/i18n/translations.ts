@@ -135,9 +135,20 @@ export const translations: Record<Lang, Dict> = {
     "checkout.orderInstructions":
       "Quét mã QR bên dưới hoặc chuyển khoản thủ công theo đúng nội dung để được cộng credit tự động.",
     "checkout.qrPlaceholder": "Mã QR VietQR sẽ hiển thị tại đây sau khi tích hợp cổng thanh toán",
+    "checkout.qrNotConfigured":
+      "Cổng thanh toán chưa được cấu hình tài khoản nhận tiền. Vui lòng liên hệ quản trị viên, hoặc chuyển khoản thủ công theo thông tin bên dưới.",
+    "checkout.scanQr": "Quét mã QR để thanh toán",
+    "checkout.scanQrHint": "Mở app ngân hàng, quét mã QR — số tiền và nội dung đã điền sẵn.",
+    "checkout.bankAccount": "Số tài khoản",
+    "checkout.bankName": "Ngân hàng",
+    "checkout.accountHolder": "Chủ tài khoản",
+    "checkout.waitingPayment": "Đang chờ xác nhận thanh toán...",
+    "checkout.paidTitle": "Thanh toán thành công!",
+    "checkout.paidDesc": "Credit đã được cộng vào tài khoản của bạn. Cảm ơn bạn đã mua gói!",
+    "checkout.backToApp": "Bắt đầu tạo ảnh",
     "checkout.amount": "Số tiền",
     "checkout.transferContent": "Nội dung chuyển khoản",
-    "checkout.copied": "✓ Đã copy nội dung chuyển khoản. ",
+    "checkout.copied": "✓ Đã copy. ",
     "checkout.pending":
       "Đơn hàng đang ở trạng thái chờ đối soát — credit sẽ được cộng vào tài khoản ngay sau khi giao dịch được xác nhận.",
     "checkout.orderSummary": "Chi tiết đơn hàng",
@@ -527,9 +538,20 @@ export const translations: Record<Lang, Dict> = {
     "checkout.orderInstructions":
       "Scan the QR code below or transfer manually with the exact reference to get credits added automatically.",
     "checkout.qrPlaceholder": "The VietQR code will appear here once the payment gateway is integrated",
+    "checkout.qrNotConfigured":
+      "The payment gateway has no receiving account configured yet. Please contact the administrator, or transfer manually using the details below.",
+    "checkout.scanQr": "Scan the QR code to pay",
+    "checkout.scanQrHint": "Open your banking app and scan the QR — the amount and reference are pre-filled.",
+    "checkout.bankAccount": "Account number",
+    "checkout.bankName": "Bank",
+    "checkout.accountHolder": "Account holder",
+    "checkout.waitingPayment": "Waiting for payment confirmation...",
+    "checkout.paidTitle": "Payment successful!",
+    "checkout.paidDesc": "Credits have been added to your account. Thank you for your purchase!",
+    "checkout.backToApp": "Start creating",
     "checkout.amount": "Amount",
     "checkout.transferContent": "Transfer reference",
-    "checkout.copied": "✓ Transfer reference copied. ",
+    "checkout.copied": "✓ Copied. ",
     "checkout.pending":
       "Your order is pending reconciliation — credits will be added to your account as soon as the transaction is confirmed.",
     "checkout.orderSummary": "Order summary",
