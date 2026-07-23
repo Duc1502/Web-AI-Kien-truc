@@ -1155,8 +1155,15 @@ Không thêm chi tiết mới ngoài hình gốc.`;
       }
     } catch (err: any) {
       console.error(err);
-      // Có mã lỗi từ server → hiển thị thông báo thân thiện theo ngôn ngữ; không có thì dùng message thô.
-      const friendly = err?.code ? t(`create.err.${err.code}`) : (err?.message || t("create.err.generic"));
+      // Ưu tiên mã lỗi từ server → thông báo thân thiện theo ngôn ngữ. Lỗi mạng/timeout (fetch không
+      // nhận được phản hồi, vd render 4K vượt 60s) → thông báo riêng. Cuối cùng mới dùng message thô.
+      const isNetwork =
+        err?.name === "TypeError" || /failed to fetch|networkerror|load failed/i.test(String(err?.message || ""));
+      const friendly = err?.code
+        ? t(`create.err.${err.code}`)
+        : isNetwork
+        ? t("create.err.network")
+        : err?.message || t("create.err.generic");
       setErrorMessage(friendly);
     } finally {
       setIsLoading(false);
