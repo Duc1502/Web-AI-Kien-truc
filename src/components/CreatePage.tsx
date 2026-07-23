@@ -1097,7 +1097,16 @@ Không thêm chi tiết mới ngoài hình gốc.`;
         }),
       });
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        // Response KHÔNG phải JSON — thường là trang lỗi text của Vercel khi function timeout/500
+        // (hay gặp với render 4K vượt 60s). Hiển thị thông báo timeout thân thiện.
+        const err: any = new Error("non-json response");
+        err.code = "network";
+        throw err;
+      }
 
       if (!response.ok || !data.success) {
         const err: any = new Error(data.error || t("create.err.generic"));
