@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { updateSetting, updateSepayBankInfo } from "./actions";
+import BankSelect from "./BankSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -69,13 +70,7 @@ export default async function SettingsPage() {
           </div>
           <div>
             <label className="block text-[11px] font-bold text-slate-400 mb-1">Mã ngân hàng *</label>
-            <input
-              name="bank_code"
-              defaultValue={sepayInfo.bank_code ?? ""}
-              required
-              placeholder="BIDV, Vietcombank, ACB, MBBank, Techcombank..."
-              className="w-full bg-[#0e1420] border border-slate-800 rounded-lg px-3 py-2 text-sm text-white"
-            />
+            <BankSelect defaultValue={sepayInfo.bank_code ?? ""} />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-[11px] font-bold text-slate-400 mb-1">Tên chủ tài khoản</label>

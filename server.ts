@@ -189,6 +189,28 @@ export const handleSepayWebhook = async (req: any, res: any): Promise<any> => {
     });
 
     if (matched) {
+      // Chống trả thiếu: chỉ cộng credit khi số tiền chuyển >= giá gói. Trả thiếu → ghi 'unmatched'
+      // cho admin xử lý, KHÔNG cộng credit và giữ nguyên đơn gốc ở trạng thái pending.
+      if (amount < Number(matched.amount_vnd)) {
+        await supabaseAdmin.from("transactions").insert({
+          amount_vnd: amount,
+          method: "vietqr",
+          status: "unmatched",
+          reference_code: `[TRẢ THIẾU] ${String(payload.content || "").slice(0, 180)}`,
+          raw_payload: {
+            ...payload,
+            note: `Trả thiếu: nhận ${amount}đ < giá gói ${matched.amount_vnd}đ (đơn ${matched.id})`,
+            matchedTransactionId: matched.id,
+          },
+        });
+        return res.json({
+          success: true,
+          matched: false,
+          underpaid: true,
+          message: "Số tiền chuyển ít hơn giá gói — đã ghi nhận để đối soát, chưa cộng credit.",
+        });
+      }
+
       const plan = PRICING_PLANS.find((p) => p.id === matched.package_id);
       const credits = plan?.credits ?? 0;
 
